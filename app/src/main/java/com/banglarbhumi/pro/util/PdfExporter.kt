@@ -27,7 +27,7 @@ object PdfExporter {
     private const val PAGE_WIDTH = 595
     private const val PAGE_HEIGHT = 842
     private const val MARGIN = 30f
-    private const val CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2) // 535f
+    private const val CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2)
 
     suspend fun generateLandRecordPdf(
         context: Context,
@@ -61,7 +61,6 @@ object PdfExporter {
 
         var y = MARGIN
 
-        // --- 1. Top Headers (Live Data & JL / Thana) ---
         val liveTime = if (result.liveTimestamp.isNotBlank()) {
             "(Live Data As On ${result.liveTimestamp})"
         } else {
@@ -86,19 +85,13 @@ object PdfExporter {
         canvas.drawText(locationText, MARGIN, y + 12f, textPaint)
         y += 20f
 
-        // --- 2. Table 1: Summary Table ---
         if (result.searchType == SearchType.KHATIAN) {
             val ks = result.khatianSummary
             val firstOwner = result.owners.firstOrNull()
 
             val displayKhatian = ks?.khatianNo?.ifBlank { result.searchNumber } ?: result.searchNumber
             val ownerDisplayName = ks?.ownerName?.ifBlank { firstOwner?.ownerName ?: "-" } ?: "-"
-            val cleanOwnerDisplayName = if (ownerDisplayName.endsWith("ব্যক্তি")) {
-                val c = ownerDisplayName.removeSuffix("ব্যক্তি").trim()
-                if (c.isBlank()) ownerDisplayName else c
-            } else {
-                ownerDisplayName
-            }
+            val cleanOwnerDisplayName = ownerDisplayName.replace(BYAKTI_REGEX, " ").trim().ifBlank { ownerDisplayName }
             val guardianDisplayName = ks?.guardianName?.ifBlank { firstOwner?.guardianName ?: "-" } ?: "-"
             val rayatTypeDisplayName = ks?.rayatType?.ifBlank { "ব্যক্তি" } ?: "ব্যক্তি"
             val addressDisplayName = ks?.address?.ifBlank { "নিজ" } ?: "নিজ"
@@ -122,23 +115,19 @@ object PdfExporter {
                 val rowTop = y
                 val rowBottom = y + rowH
 
-                // Row background (alternating #FFFFFF and #EAEAEA)
                 fillPaint.color = if (idx % 2 == 0) Color.WHITE else Color.parseColor("#EAEAEA")
                 canvas.drawRect(MARGIN, rowTop, MARGIN + CONTENT_WIDTH, rowBottom, fillPaint)
 
-                // Borders
                 strokePaint.color = Color.parseColor("#C0C0C0")
                 canvas.drawRect(MARGIN, rowTop, MARGIN + col1W, rowBottom, strokePaint)
                 canvas.drawRect(MARGIN + col1W, rowTop, MARGIN + CONTENT_WIDTH, rowBottom, strokePaint)
 
-                // Col 1 Text
                 textPaint.color = Color.BLACK
                 textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 textPaint.textSize = 9.5f
                 textPaint.textAlign = Paint.Align.LEFT
                 canvas.drawText(row.first, MARGIN + 8f, rowTop + 14.5f, textPaint)
 
-                // Col 2 Text
                 textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
                 canvas.drawText(row.second, MARGIN + col1W + 8f, rowTop + 14.5f, textPaint)
 
@@ -146,13 +135,12 @@ object PdfExporter {
             }
             y += 14f
         } else {
-            // Plot Summary Table (3 Columns matching portal layout)
+
             val col1W = 140f
             val col2W = 140f
-            val col3W = CONTENT_WIDTH - col1W - col2W // 255f
+            val col3W = CONTENT_WIDTH - col1W - col2W
             val rowH = 21f
 
-            // Header
             fillPaint.color = Color.parseColor("#D5E8D4")
             canvas.drawRect(MARGIN, y, MARGIN + CONTENT_WIDTH, y + rowH, fillPaint)
 
@@ -171,7 +159,6 @@ object PdfExporter {
             canvas.drawText("জমির মোট পরিমাণ(একর)", MARGIN + col1W + col2W + (col3W / 2f), y + 14.5f, textPaint)
             y += rowH
 
-            // Data Row
             fillPaint.color = Color.WHITE
             canvas.drawRect(MARGIN, y, MARGIN + CONTENT_WIDTH, y + rowH, fillPaint)
 
@@ -191,7 +178,6 @@ object PdfExporter {
             y += rowH + 14f
         }
 
-        // --- 3. Subheading & Purple Note ---
         val sectionTitle = if (result.searchType == SearchType.KHATIAN)
             "অত্রস্বত্বের দাগের বিবরণ ও পরিমাণ:"
         else
@@ -209,21 +195,20 @@ object PdfExporter {
         else
             "(* রায়তের অংশ অনুযায়ী দাগের জমির যথার্থ পরিমাণ নির্ধারিত হইবে।)"
 
-        textPaint.color = Color.parseColor("#800080") // Purple
+        textPaint.color = Color.parseColor("#800080")
         textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
         textPaint.textSize = 8.8f
         canvas.drawText(sectionNote, MARGIN, y + 9f, textPaint)
         y += 15f
 
-        // --- 4. Table 2: Detail Table Layout Specifications ---
         val isKhatian = result.searchType == SearchType.KHATIAN
 
         val colWidths: FloatArray = if (isKhatian) {
-            // S/N, দাগ নং, শ্রেণী, অংশ, অংশ পরিমাণ(একর), দখলদার, মন্তব্য
-            floatArrayOf(35f, 60f, 70f, 85f, 115f, 85f, 85f) // Sum = 535f
+
+            floatArrayOf(35f, 60f, 70f, 85f, 115f, 85f, 85f)
         } else {
-            // S/N, খতিয়ান নং, দখলকারের নাম, পিতা/স্বামী, অংশ, অংশ পরিমাণ(একর), দখলদার, মন্তব্য
-            floatArrayOf(30f, 55f, 115f, 105f, 50f, 100f, 40f, 40f) // Sum = 535f
+
+            floatArrayOf(30f, 55f, 115f, 105f, 50f, 100f, 40f, 40f)
         }
 
         val colHeaders: Array<String> = if (isKhatian) {
@@ -257,9 +242,8 @@ object PdfExporter {
         drawTable2Header(canvas, y)
         y += headerRowH
 
-        // Draw Table 2 Rows
         for ((index, owner) in result.owners.withIndex()) {
-            // Check for page overflow
+
             if (y + tableRowH > PAGE_HEIGHT - MARGIN) {
                 document.finishPage(page)
 
@@ -276,7 +260,6 @@ object PdfExporter {
             val rowTop = y
             val rowBottom = y + tableRowH
 
-            // Background
             fillPaint.color = if (index % 2 == 0) Color.WHITE else Color.parseColor("#FAFAFA")
             canvas.drawRect(MARGIN, rowTop, MARGIN + CONTENT_WIDTH, rowBottom, fillPaint)
 
@@ -311,16 +294,13 @@ object PdfExporter {
                 val w = colWidths[i]
                 canvas.drawRect(currentX, rowTop, currentX + w, rowBottom, strokePaint)
 
-                // Clip cell to prevent text bleeding into adjacent cells
                 canvas.save()
                 canvas.clipRect(currentX + 1f, rowTop + 1f, currentX + w - 1f, rowBottom - 1f)
 
                 if (!isKhatian && i == 2) {
-                    // "দখলকারের নাম" Column in Plot/Dag Search:
-                    // Place the name on the first line, and "ব্যক্তি" in purple (#800080) on the next line
+
                     val (nameText, typeText) = extractOwnerNameAndRayatType(owner)
 
-                    // Line 1: Owner Name (Black)
                     textPaint.color = Color.BLACK
                     textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
                     var nameSize = 8.5f
@@ -336,7 +316,6 @@ object PdfExporter {
                     if (typeText.isNotBlank()) {
                         canvas.drawText(nameText, currentX + (w / 2f), rowTop + 11.5f, textPaint)
 
-                        // Line 2: Rayat Type (e.g. ব্যক্তি) in Purple (#800080)
                         textPaint.color = Color.parseColor("#800080")
                         textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
                         textPaint.textSize = 8f
@@ -347,12 +326,11 @@ object PdfExporter {
                 } else {
                     val text = cells[i]
 
-                    // Specific styling matching uploaded portal image
                     if (text.contains("বর্গা")) {
-                        textPaint.color = Color.parseColor("#0000FF") // Blue for Barga
+                        textPaint.color = Color.parseColor("#0000FF")
                         textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                     } else if (text.equals("Nil", ignoreCase = true) || text.contains("Nil Remarks", ignoreCase = true)) {
-                        textPaint.color = Color.parseColor("#CC0000") // Red for Nil / Nil Remarks
+                        textPaint.color = Color.parseColor("#CC0000")
                         textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                     } else {
                         textPaint.color = Color.BLACK
@@ -373,7 +351,6 @@ object PdfExporter {
             y += tableRowH
         }
 
-        // --- 5. Promotional Banner at the End of the PDF ---
         val bannerBitmap = loadBannerBitmap(context)
         if (bannerBitmap != null) {
             val bannerWidth = CONTENT_WIDTH
@@ -382,7 +359,6 @@ object PdfExporter {
 
             y += 18f
 
-            // If banner exceeds page bottom, put it on a fresh page
             if (y + bannerHeight > PAGE_HEIGHT - MARGIN) {
                 document.finishPage(page)
 
@@ -403,7 +379,6 @@ object PdfExporter {
 
             canvas.drawBitmap(bannerBitmap, srcRect, dstRect, bmpPaint)
 
-            // Subtle border around banner
             val bPaint = Paint().apply {
                 isAntiAlias = true
                 style = Paint.Style.STROKE
@@ -441,7 +416,7 @@ object PdfExporter {
     }
 
     private fun loadRawBannerBitmap(context: Context): Bitmap? {
-        // 1. Check direct file path specified by user
+
         val userBannerPath = "E:/Projects/Android Application Dev/BanglarBhumi-Pro Application/Banglarbhumi_Pro-Banner.png"
         try {
             val file = File(userBannerPath)
@@ -451,13 +426,11 @@ object PdfExporter {
             }
         } catch (_: Exception) {}
 
-        // 2. Check drawable resource bundled in APK
         try {
             val bmp = BitmapFactory.decodeResource(context.resources, R.drawable.banglarbhumi_pro_banner)
             if (bmp != null) return bmp
         } catch (_: Exception) {}
 
-        // 3. Check assets folder bundled in APK
         try {
             context.assets.open("Banglarbhumi_Pro-Banner.png").use { stream ->
                 val bmp = BitmapFactory.decodeStream(stream)
@@ -468,12 +441,6 @@ object PdfExporter {
         return null
     }
 
-    /**
-     * Scales the banner bitmap to high-definition 1600px width with full 32-bit color depth
-     * while explicitly marking it opaque (hasAlpha = false).
-     * This provides pristine, razor-sharp banner quality on the PDF while keeping the final PDF
-     * file size comfortably around ~900 KB – 1.1 MB (well under the 2 MB target).
-     */
     private fun getOptimizedBannerBitmap(src: Bitmap): Bitmap {
         val targetWidth = 1600
         val targetHeight = (targetWidth.toFloat() * src.height.toFloat() / src.width.toFloat()).toInt().coerceAtLeast(1)
@@ -492,41 +459,39 @@ object PdfExporter {
         return highQualityBmp
     }
 
-    private fun extractOwnerNameAndRayatType(owner: LandOwner): Pair<String, String> {
+    private val BYAKTI_REGEX = Regex("[\\s\\u00A0(\\[]*ব[\\u200C\\u200D]*্[\\u200C\\u200D]*য[\\u200C\\u200D]*[া]?[\\u200C\\u200D]*ক[\\u200C\\u200D]*্[\\u200C\\u200D]*ত[\\u200C\\u200D]*ি[\\s\\u00A0)\\]]*")
+
+    internal fun extractOwnerNameAndRayatType(owner: LandOwner): Pair<String, String> {
         val rawName = owner.ownerName.trim()
         val rawType = owner.rayatType.trim()
 
-        if (rawName.endsWith("ব্যক্তি")) {
-            val clean = rawName.removeSuffix("ব্যক্তি").trim()
-            val displayName = if (clean.isBlank()) rawName else clean
-            val displayType = if (rawType.isNotBlank()) rawType else "ব্যক্তি"
-            return Pair(displayName, displayType)
-        }
+        var cleanName = rawName.replace(BYAKTI_REGEX, " ").trim()
+        val hasByakti = rawName.contains(BYAKTI_REGEX)
 
-        if (rawType.isNotBlank() && rawName.endsWith(rawType)) {
-            val clean = rawName.removeSuffix(rawType).trim()
-            val displayName = if (clean.isBlank()) rawName else clean
-            return Pair(displayName, rawType)
-        }
-
-        if (rawType.isNotBlank()) {
-            return Pair(rawName, rawType)
+        if (rawType.isNotBlank() && cleanName.contains(rawType)) {
+            cleanName = cleanName.replace(rawType, " ").trim()
         }
 
         val knownTypes = listOf("সংস্থা", "প্রতিষ্ঠান", "সমিতি", "ট্রাস্ট", "সরকার")
         for (kt in knownTypes) {
-            if (rawName.endsWith(kt)) {
-                val clean = rawName.removeSuffix(kt).trim()
-                if (clean.isNotBlank()) {
-                    return Pair(clean, kt)
+            if (cleanName.endsWith(kt)) {
+                cleanName = cleanName.removeSuffix(kt).trim()
+                if (cleanName.isNotBlank()) {
+                    return Pair(cleanName, kt)
                 }
             }
         }
 
-        return if (rawName.isNotBlank() && rawName != "-") {
-            Pair(rawName, "ব্যক্তি")
-        } else {
-            Pair(rawName.ifBlank { "-" }, "")
+        cleanName = cleanName.replace(Regex("\\s+"), " ").trim()
+        val displayName = if (cleanName.isNotBlank() && cleanName != "-") cleanName else rawName.ifBlank { "-" }
+
+        val displayType = when {
+            rawType.isNotBlank() -> rawType
+            hasByakti -> "ব্যক্তি"
+            displayName != "-" -> "ব্যক্তি"
+            else -> ""
         }
+
+        return Pair(displayName, displayType)
     }
 }

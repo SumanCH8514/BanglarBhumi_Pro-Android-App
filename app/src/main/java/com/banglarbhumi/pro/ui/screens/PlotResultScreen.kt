@@ -32,10 +32,6 @@ import com.banglarbhumi.pro.util.PdfExporter
 import com.banglarbhumi.pro.util.PdfStorageManager
 import kotlinx.coroutines.launch
 
-/**
- * Dedicated Result Page for Dag / Plot numbers.
- * Provides wide-viewport scaling for multi-column land plot records.
- */
 @Composable
 fun PlotResultScreen(
     result: LandRecordResult,
@@ -55,7 +51,7 @@ fun PlotResultScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Top Navigation & Action Header
+
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = Color.White,
@@ -92,7 +88,6 @@ fun PlotResultScreen(
                         )
                     }
 
-                    // Location / Record Tag (Expanded and perfectly laid out)
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -120,7 +115,6 @@ fun PlotResultScreen(
                 }
             }
 
-            // Main Document View (Full-width for Plot/Dag records)
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -170,7 +164,6 @@ fun PlotResultScreen(
             }
         }
 
-        // Floating "SAVE PDF" Button at Bottom Right
         Button(
             onClick = {
                 if (!isExportingPdf) {

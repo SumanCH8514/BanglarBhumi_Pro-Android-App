@@ -61,7 +61,7 @@ fun SavedRecordsScreen(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // 1. NON-FIXED "Saved Land Records" Banner Card - SCROLLS AWAY WITH CONTENT
+
             item(key = "header_banner") {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -119,7 +119,6 @@ fun SavedRecordsScreen(
                 }
             }
 
-            // 2. STICKY HEADER: Downloaded PDFs and Bookmarks Row - REMAINS FIXED WHILE SCROLLING
             stickyHeader(key = "tabs_row") {
                 Surface(
                     color = MaterialTheme.colorScheme.background,
@@ -167,9 +166,8 @@ fun SavedRecordsScreen(
                 }
             }
 
-            // 3. Tab Content
             if (selectedTabIndex == 0) {
-                // DOWNLOADED PDF LIST
+
                 if (savedPdfs.isEmpty()) {
                     item(key = "empty_pdfs") {
                         Card(
@@ -269,7 +267,7 @@ fun SavedRecordsScreen(
                     }
                 }
             } else {
-                // STARRED PDF LIST
+
                 if (starredPdfs.isEmpty()) {
                     item(key = "empty_starred") {
                         Card(
@@ -370,7 +368,7 @@ private fun SavedPdfListItem(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Top Row: Refined Type Badge on left + Star & Delete Buttons on right
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -406,12 +404,11 @@ private fun SavedPdfListItem(
                     }
                 }
 
-                // Right Action Buttons: Star beside Delete
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Star Button
+
                     Surface(
                         onClick = onToggleStar,
                         shape = RoundedCornerShape(50),
@@ -429,7 +426,6 @@ private fun SavedPdfListItem(
                         }
                     }
 
-                    // Delete Button: Soft circular container with ripple
                     Surface(
                         onClick = onDelete,
                         shape = RoundedCornerShape(50),
@@ -448,7 +444,6 @@ private fun SavedPdfListItem(
                 }
             }
 
-            // Primary Title: Mouza and Dag/Khatian - no (clean typography without duplicate wraps)
             Text(
                 text = item.getDisplayTitle(isBengali),
                 fontSize = 16.5.sp,
@@ -457,7 +452,6 @@ private fun SavedPdfListItem(
                 lineHeight = 22.sp
             )
 
-            // Location Hierarchy (District > Block) with Map Pin icon
             val distClean = item.districtName.replace(Regex("\\s*\\([^)]*\\)"), "").trim()
             val blkClean = item.blockName.replace(Regex("\\s*\\([^)]*\\)"), "").trim()
             if (distClean.isNotBlank() && blkClean.isNotBlank()) {
@@ -480,7 +474,6 @@ private fun SavedPdfListItem(
                 }
             }
 
-            // Metadata Row: Time & File Size inside a clean, subtle pill
             Surface(
                 color = Color(0xFFF8FAFC),
                 shape = RoundedCornerShape(8.dp),
@@ -520,12 +513,11 @@ private fun SavedPdfListItem(
 
             HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
 
-            // Bottom Actions Row: Exact same position & layout (View PDF on left, Share PDF on right)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // VIEW OPTION
+
                 Button(
                     onClick = onView,
                     modifier = Modifier.weight(1f),
@@ -550,7 +542,6 @@ private fun SavedPdfListItem(
                     )
                 }
 
-                // SHARE OPTION
                 OutlinedButton(
                     onClick = onShare,
                     modifier = Modifier.weight(1f),

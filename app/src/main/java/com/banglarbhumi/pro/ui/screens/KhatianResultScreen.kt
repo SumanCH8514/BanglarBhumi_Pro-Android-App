@@ -32,11 +32,6 @@ import com.banglarbhumi.pro.util.PdfExporter
 import com.banglarbhumi.pro.util.PdfStorageManager
 import kotlinx.coroutines.launch
 
-/**
- * Dedicated Result Page for Khatian numbers.
- * Displays clean, 100% full-width Khatian summary and Plot distributions
- * without shrinkage or table width constraints.
- */
 @Composable
 fun KhatianResultScreen(
     result: LandRecordResult,
@@ -56,7 +51,7 @@ fun KhatianResultScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Top Navigation & Action Header (Matching exact look)
+
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = Color.White,
@@ -93,7 +88,6 @@ fun KhatianResultScreen(
                         )
                     }
 
-                    // Location / Record Tag (Expanded and perfectly laid out)
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -121,7 +115,6 @@ fun KhatianResultScreen(
                 }
             }
 
-            // Main Document View (Full-width 100% responsive for Khatian records)
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -171,7 +164,6 @@ fun KhatianResultScreen(
             }
         }
 
-        // Floating "SAVE PDF" Button at Bottom Right (Matching screenshot)
         Button(
             onClick = {
                 if (!isExportingPdf) {

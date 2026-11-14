@@ -131,7 +131,6 @@ fun SearchScreen(viewModel: MainViewModel) {
                     }
                 }
 
-                // Portal Session Connection Banner
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -262,7 +261,6 @@ fun SearchScreen(viewModel: MainViewModel) {
                     onClick = { showMouzaDialog = true }
                 )
 
-                // 4. Dag / Khatian Number & Bata Number Inputs
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)

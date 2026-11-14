@@ -54,6 +54,7 @@ fun AccountScreen(
     var showGuideDialog by remember { mutableStateOf(false) }
     var showLogoutConfirmDialog by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }
+    var showAboutProjectDialog by remember { mutableStateOf(false) }
     var editNameText by remember { mutableStateOf("") }
 
     LaunchedEffect(isPortalLoggedIn) {
@@ -62,7 +63,6 @@ fun AccountScreen(
         }
     }
 
-    // Dynamic app version name
     val versionName = remember(context) {
         try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
@@ -72,7 +72,6 @@ fun AccountScreen(
         }
     }
 
-    // Dynamic current year for copyright
     val dynamicYear = remember {
         Calendar.getInstance().get(Calendar.YEAR).toString()
     }
@@ -103,7 +102,7 @@ fun AccountScreen(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 24.dp)
     ) {
-        // Top Header / Branding Card
+
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -166,7 +165,6 @@ fun AccountScreen(
             }
         }
 
-        // Profile Section Card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -186,7 +184,7 @@ fun AccountScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Default profile picture avatar
+
                     Box(
                         modifier = Modifier
                             .size(68.dp)
@@ -262,7 +260,6 @@ fun AccountScreen(
 
                         Spacer(modifier = Modifier.height(6.dp))
 
-                        // Status badge
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = if (isPortalLoggedIn) Emerald100 else GoldLight
@@ -295,7 +292,6 @@ fun AccountScreen(
 
                 HorizontalDivider(color = Slate200, thickness = 1.dp)
 
-                // Login / Logout Action Button
                 if (isPortalLoggedIn) {
                     OutlinedButton(
                         onClick = { showLogoutConfirmDialog = true },
@@ -348,7 +344,6 @@ fun AccountScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Settings Section
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -380,7 +375,7 @@ fun AccountScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    // Item 1: Cached Portal Credentials
+
                     AccountListItem(
                         icon = Icons.Default.VpnKey,
                         title = if (isBengali) "পোর্টাল ক্রেডেনশিয়ালস:" else "Portal Credentials Cache",
@@ -431,7 +426,6 @@ fun AccountScreen(
 
                     HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 56.dp))
 
-                    // Item 2: Saved Land Records
                     AccountListItem(
                         icon = Icons.Default.Bookmark,
                         title = if (isBengali) "সংরক্ষিত রেকর্ডসমূহ" else "Saved Land Records",
@@ -449,7 +443,6 @@ fun AccountScreen(
 
                     HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 56.dp))
 
-                    // Item 3: Citizen Guide & Procedures
                     AccountListItem(
                         icon = Icons.Default.MenuBook,
                         title = if (isBengali) "সিটিজেন নির্দেশিকা ও নিয়মাবলী" else "Citizen Guide & Procedures",
@@ -470,7 +463,6 @@ fun AccountScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Preferences Section
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -502,7 +494,7 @@ fun AccountScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    // Item 1: Language Preference
+
                     AccountListItem(
                         icon = Icons.Default.Language,
                         title = if (isBengali) "অ্যাপের ভাষা:" else "App Language",
@@ -527,7 +519,6 @@ fun AccountScreen(
 
                     HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 56.dp))
 
-                    // Item 2: Automatic SMS OTP Detection
                     AccountListItem(
                         icon = Icons.Default.Sms,
                         title = if (isBengali) "স্বয়ংক্রিয় SMS OTP সনাক্তকরণ" else "Automatic SMS OTP Detection",
@@ -551,7 +542,6 @@ fun AccountScreen(
 
                     HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 56.dp))
 
-                    // Item 3: Storage & Cache Clean
                     AccountListItem(
                         icon = Icons.Default.CleaningServices,
                         title = if (isBengali) "অস্থায়ী ক্যাশে পরিষ্কার করুন" else "Clear Temporary Cache",
@@ -576,14 +566,125 @@ fun AccountScreen(
             }
         }
 
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // ─── ABOUT PROJECT SECTION ───
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = null,
+                    tint = Emerald800,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = if (isBengali) "প্রজেক্ট সম্পর্কিত (About Project)" else "About Project",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Slate900
+                )
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    AccountListItem(
+                        icon = Icons.Default.Apps,
+                        title = "BanglarBhumi Pro",
+                        subtitle = if (isBengali) "পশ্চিমবঙ্গ ভূমি ও ভূমি সংস্কার সিটিজেন তথ্য সহায়ক" else "West Bengal Land Records Citizen Companion",
+                        trailing = {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Emerald100
+                            ) {
+                                Text(
+                                    text = "v1.1.0",
+                                    color = Emerald800,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                )
+                            }
+                        },
+                        onClick = { showAboutProjectDialog = true }
+                    )
+
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 56.dp))
+
+                    AccountListItem(
+                        icon = Icons.Default.NewReleases,
+                        title = if (isBengali) "ভার্সন v1.1.0 রিলিজ নোটস ও আপডেট" else "Version v1.1.0 Release Notes & Updates",
+                        subtitle = if (isBengali) "নতুন ফিচার, PDF অপটিমাইজেশন ও বাগ ফিক্স" else "New features, PDF optimizations & bug fixes",
+                        trailing = {
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = Slate400,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        onClick = { showAboutProjectDialog = true }
+                    )
+
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 56.dp))
+
+                    AccountListItem(
+                        icon = Icons.Default.Business,
+                        title = if (isBengali) "ডেভেলপার ও প্রকাশক" else "Developer & Publisher",
+                        subtitle = "SumanOnline Web Services",
+                        trailing = {
+                            Icon(
+                                imageVector = Icons.Default.OpenInNew,
+                                contentDescription = null,
+                                tint = Slate400,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        onClick = {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://sumanonline.com"))
+                                context.startActivity(intent)
+                            } catch (_: Exception) {}
+                        }
+                    )
+
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 56.dp))
+
+                    AccountListItem(
+                        icon = Icons.Default.Code,
+                        title = if (isBengali) "GitHub রিপোজিটরি ও রিলিজ" else "GitHub Repository & Releases",
+                        subtitle = "SumanCH8514/BanglarBhumi_Pro-Android-App",
+                        trailing = {
+                            Icon(
+                                imageVector = Icons.Default.OpenInNew,
+                                contentDescription = null,
+                                tint = Slate400,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        onClick = {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/SumanCH8514/BanglarBhumi_Pro-Android-App/releases/tag/v1.1.0"))
+                                context.startActivity(intent)
+                            } catch (_: Exception) {}
+                        }
+                    )
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Footer Section
-        // Specs requested:
-        // logo
-        // Brandname in bold v1.0.0(dynamic)
-        // Privacy policy | terms and conditions | contact us
-        // © (Dynamic Year) SumanOnline Web Services.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -591,7 +692,7 @@ fun AccountScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Logo
+
             Surface(
                 shape = CircleShape,
                 color = Color.White,
@@ -609,7 +710,6 @@ fun AccountScreen(
                 }
             }
 
-            // Brand name in bold + dynamic version
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
@@ -635,7 +735,6 @@ fun AccountScreen(
                 }
             }
 
-            // Links: Privacy policy | terms and conditions | contact us
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -689,7 +788,6 @@ fun AccountScreen(
                 )
             }
 
-            // Copyright dynamic year
             Text(
                 text = "© $dynamicYear SumanOnline Web Services.",
                 fontSize = 11.sp,
@@ -710,7 +808,6 @@ fun AccountScreen(
         }
     }
 
-    // Dialog 1: Privacy Policy Dialog
     if (showPrivacyDialog) {
         AlertDialog(
             onDismissRequest = { showPrivacyDialog = false },
@@ -781,7 +878,6 @@ fun AccountScreen(
         )
     }
 
-    // Dialog 2: Terms & Conditions Dialog
     if (showTermsDialog) {
         AlertDialog(
             onDismissRequest = { showTermsDialog = false },
@@ -839,7 +935,6 @@ fun AccountScreen(
         )
     }
 
-    // Dialog 3: Contact Us Dialog
     if (showContactDialog) {
         AlertDialog(
             onDismissRequest = { showContactDialog = false },
@@ -943,7 +1038,6 @@ fun AccountScreen(
         )
     }
 
-    // Dialog 4: Citizen Guide Dialog
     if (showGuideDialog) {
         AlertDialog(
             onDismissRequest = { showGuideDialog = false },
@@ -979,7 +1073,6 @@ fun AccountScreen(
         )
     }
 
-    // Dialog 5: Logout Confirmation Dialog
     if (showLogoutConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutConfirmDialog = false },
@@ -1028,7 +1121,6 @@ fun AccountScreen(
         )
     }
 
-    // Dialog 6: Edit / Verify Citizen Name Dialog
     if (showEditNameDialog) {
         AlertDialog(
             onDismissRequest = { showEditNameDialog = false },
@@ -1134,6 +1226,205 @@ fun AccountScreen(
             dismissButton = {
                 TextButton(onClick = { showEditNameDialog = false }) {
                     Text(text = if (isBengali) "বাতিল" else "Cancel")
+                }
+            }
+        )
+    }
+
+    if (showAboutProjectDialog) {
+        AlertDialog(
+            onDismissRequest = { showAboutProjectDialog = false },
+            containerColor = Color.White,
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White,
+                        shadowElevation = 2.dp,
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Image(
+                                painter = painterResource(id = R.drawable.app_logo),
+                                contentDescription = "Logo",
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                            )
+                        }
+                    }
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = "BanglarBhumi Pro",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Slate900
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = Emerald100
+                            ) {
+                                Text(
+                                    text = "v1.1.0",
+                                    color = Emerald800,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = if (isBengali) "প্রজেক্ট ও ভার্সন বিবরণ" else "Project & Version Details",
+                            fontSize = 12.sp,
+                            color = Slate500
+                        )
+                    }
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Emerald50,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Emerald100)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = if (isBengali) "🚀 সংস্করণ v1.1.0 আপডেট সমূহ:" else "🚀 Version v1.1.0 Changelogs:",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.5.sp,
+                                color = Emerald900
+                            )
+                            Text(
+                                text = if (isBengali)
+                                    "• সম্পূর্ণ নতুন অফিশিয়াল গভঃ পোর্টাল স্টাইলে PDF এক্সপোর্ট\n" +
+                                    "• দখলকারের নামের নিচে বেগুনি রঙে 'ব্যক্তি' ট্যাগিং এবং ডুপ্লিকেট নাম সংশোধন\n" +
+                                    "• ডাউনলোড করা PDF-এ দাগ নম্বরের পূর্বে S/N (ক্রমিক নম্বর) কলাম সংযোজন\n" +
+                                    "• উচ্চমানের প্রমোশনাল ব্যানারসহ PDF সাইজ ২ MB-র নিচে কঠোর অপটিমাইজেশন\n" +
+                                    "• সংরক্ষিত রেকর্ডে 'Starred / প্রিয়' বুকমার্কিং এবং দ্রুত ফিল্টার\n" +
+                                    "• স্ক্রোলিং করার সময় ডাউনলোড ও বুকমার্ক ট্যাবের স্টিকি হেডার\n" +
+                                    "• স্বয়ংক্রিয় Play Services SMS OTP সনাক্তকরণ সুবিধা"
+                                else
+                                    "• Brand-new official portal grade layout for PDF exports\n" +
+                                    "• Clean owner name on Line 1 with purple 'ব্যক্তি' badge on Line 2 (Zero duplicate ব্যক্তি)\n" +
+                                    "• Serial Number (S/N) column preceding Dag Number in downloaded records\n" +
+                                    "• High-resolution promotional banner with strict size compression (< 2 MB)\n" +
+                                    "• Starred / Favorites system in Saved Records with dedicated tab filter\n" +
+                                    "• Sticky tab header and responsive card redesign for Saved Records\n" +
+                                    "• Automatic Play Services SMS OTP user consent integration",
+                                fontSize = 12.sp,
+                                color = Slate700,
+                                lineHeight = 18.sp
+                            )
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Slate50,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Slate200)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = if (isBengali) "বিল্ড সংস্করণ:" else "Build Version:",
+                                    fontSize = 12.sp,
+                                    color = Slate600
+                                )
+                                Text(
+                                    text = "1.1.0 (VersionCode 2)",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Slate900
+                                )
+                            }
+                            HorizontalDivider(color = Slate200, thickness = 0.5.dp)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = if (isBengali) "রিলিজ টাইপ:" else "Release Channel:",
+                                    fontSize = 12.sp,
+                                    color = Slate600
+                                )
+                                Text(
+                                    text = "Production Release",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Emerald800
+                                )
+                            }
+                            HorizontalDivider(color = Slate200, thickness = 0.5.dp)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = if (isBengali) "প্রকাশক:" else "Organization:",
+                                    fontSize = 12.sp,
+                                    color = Slate600
+                                )
+                                Text(
+                                    text = "SumanOnline Web Services",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Slate900
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/SumanCH8514/BanglarBhumi_Pro-Android-App/releases/tag/v1.1.0"))
+                            context.startActivity(intent)
+                        } catch (_: Exception) {}
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Emerald800)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.OpenInNew,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(text = if (isBengali) "GitHub রিলিজ দেখুন" else "View on GitHub")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAboutProjectDialog = false }) {
+                    Text(text = if (isBengali) "বন্ধ করুন" else "Close")
                 }
             }
         )

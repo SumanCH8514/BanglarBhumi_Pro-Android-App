@@ -103,7 +103,6 @@ fun PortalLoginDialog(
             }
             SmsOtpHelper.registerConsentReceiver(context, receiver)
 
-            // Check clipboard on entering OTP step
             val clipText = clipboardManager.getText()?.text
             val extractedClip = SmsOtpHelper.extractOtpFromMessage(clipText)
             if (!extractedClip.isNullOrBlank()) {
@@ -163,7 +162,7 @@ fun PortalLoginDialog(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,

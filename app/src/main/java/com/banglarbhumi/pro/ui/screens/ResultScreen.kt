@@ -5,9 +5,6 @@ import com.banglarbhumi.pro.data.model.LandRecordResult
 import com.banglarbhumi.pro.data.model.SearchType
 import com.banglarbhumi.pro.ui.viewmodel.MainViewModel
 
-/**
- * Main result router that routes to dedicated pages for Plot/Dag number and Khatian number.
- */
 @Composable
 fun ResultScreen(
     result: LandRecordResult,

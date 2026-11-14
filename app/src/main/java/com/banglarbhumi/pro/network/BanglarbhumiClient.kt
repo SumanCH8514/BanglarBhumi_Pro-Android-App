@@ -46,6 +46,10 @@ data class CaptchaData(
 
 class BanglarbhumiClient(private val context: Context? = null) {
 
+    companion object {
+        val BYAKTI_REGEX = Regex("[\\s\\u00A0(\\[]*ব[\\u200C\\u200D]*্[\\u200C\\u200D]*য[\\u200C\\u200D]*[া]?[\\u200C\\u200D]*ক[\\u200C\\u200D]*্[\\u200C\\u200D]*ত[\\u200C\\u200D]*ি[\\s\\u00A0)\\]]*")
+    }
+
     private val cookieStore = mutableMapOf<String, MutableMap<String, Cookie>>()
     private val sessionPrefs = context?.getSharedPreferences("bb_session_store", Context.MODE_PRIVATE)
 
@@ -123,7 +127,7 @@ class BanglarbhumiClient(private val context: Context? = null) {
         if (!cached.isNullOrBlank()) return cached
         val logged = sessionPrefs?.getString("citizen_name", null)
         if (!logged.isNullOrBlank()) return logged
-        // Intelligent initial fallback from cached credential if available
+
         val pass = sessionPrefs?.getString("cached_password", "") ?: ""
         val mCamel = Pattern.compile("^([A-Z][a-z]+)").matcher(pass)
         if (mCamel.find()) {
@@ -460,10 +464,8 @@ class BanglarbhumiClient(private val context: Context? = null) {
             if (isActionSuccess(body) || hasPortalSessionCookie()) {
                 saveSessionCookies(cleanUser)
 
-                // 1. Try to extract citizen name from login.action JSON response
                 var extractedName = extractCitizenNameFromJson(body)
 
-                // 2. If not found in JSON, attempt to fetch Home page with the active session cookies
                 if (extractedName.isNullOrBlank()) {
                     extractedName = fetchCitizenNameFromPortalInternal()
                 }
@@ -505,7 +507,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
 
             if (html.isBlank()) return null
 
-            // 1. Match in afterLoginLabel container (label, div, span, p, a)
             val pAfterLogin = Pattern.compile("(?is)<(?:div|label|span|p|a)[^>]*id\\s*=\\s*['\"]afterLoginLabel['\"][^>]*>(.*?)(?:</(?:div|label|span|p|a)>|$)")
             val mAfterLogin = pAfterLogin.matcher(html)
             if (mAfterLogin.find()) {
@@ -524,7 +525,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
                 }
             }
 
-            // 1b. Match Welcome / Swagatam with user name
             val pWelcome = Pattern.compile("(?is)(?:Welcome|স্বাগতম)[\\s:,-]+([A-Za-z\\s]{2,40})[<&\"\\r\\n]")
             val mWelcome = pWelcome.matcher(html)
             if (mWelcome.find()) {
@@ -536,7 +536,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
                 }
             }
 
-            // 2. Match JavaScript user variables
             val pUserVar = Pattern.compile("(?is)(?:var\\s+)?(?:userName|user_name|citizenName|applicantName)\\s*=\\s*['\"]([^'\"]+)['\"]")
             val mUserVar = pUserVar.matcher(html)
             if (mUserVar.find()) {
@@ -548,7 +547,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
                 }
             }
 
-            // 3. Match user name spans / labels
             val pSpan = Pattern.compile("(?is)<(?:span|label|p|div)[^>]*(?:id|class)\\s*=\\s*['\"][^'\"]*(?:userName|user-name|citizen-name|user_name)[^'\"]*['\"][^>]*>([^<]+)</")
             val mSpan = pSpan.matcher(html)
             if (mSpan.find()) {
@@ -677,7 +675,7 @@ class BanglarbhumiClient(private val context: Context? = null) {
             try {
                 client.newCall(handshakeReq).execute().close()
             } catch (_: IOException) {
-                
+
             }
 
             val formBuilder = FormBody.Builder()
@@ -861,10 +859,9 @@ class BanglarbhumiClient(private val context: Context? = null) {
         mouzaName: String,
         mouzaCode: String
     ): ParsedRecordData {
-        // Normalize text for reliable header extraction
+
         val cleanText = html.replace("&nbsp;", " ").replace(Regex("<[^>]*>"), " ")
 
-        // 1. Live Timestamp
         val timeRegex = Pattern.compile("(?i)(?:Live\\s*Data\\s*As\\s*On|As\\s*On)\\s*[:]?\\s*([0-9/\\-:, ]{10,25})")
         val timeMatcher = timeRegex.matcher(cleanText)
         val liveTimestamp = if (timeMatcher.find()) {
@@ -873,7 +870,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
             SimpleDateFormat("dd/MM/yyyy,HH:mm:ss", Locale.getDefault()).format(Date())
         }
 
-        // 2. JL Number
         val jlRegex = Pattern.compile("(?i)জে\\.?\\s*এল\\.?\\s*(?:নং)?\\s*[:ঃ]?\\s*([0-9]+)")
         val jlMatcher = jlRegex.matcher(cleanText)
         val jlNumber = if (jlMatcher.find()) {
@@ -884,7 +880,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
             bracketNum ?: if (digits.isNotBlank()) digits.padStart(3, '0').takeLast(3) else "089"
         }
 
-        // 3. Thana
         val thanaRegex = Pattern.compile("(?i)থানা\\s*[:ঃ]?\\s*([\\p{L}0-9\\-]+)")
         val thanaMatcher = thanaRegex.matcher(cleanText)
         val candidateThana = if (thanaMatcher.find()) thanaMatcher.group(1).orEmpty().trim() else ""
@@ -900,7 +895,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
         }
         val thanaName = cleanThana
 
-        // 4. Parse Tables
         val tableMatcher = Pattern.compile("(?i)<table[^>]*>(.*?)</table>", Pattern.DOTALL).matcher(html)
         val tableList = mutableListOf<String>()
         while (tableMatcher.find()) {
@@ -916,7 +910,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
             .replace(Regex("(?is)<script[^>]*>.*?</script>"), "")
             .replace(Regex("(?is)<style[^>]*>.*?</style>"), "")
 
-        // Gather all <tr> elements by splitting on <tr tag (reliably handles unclosed <tr> tags from portal JSP)
         val rawRowSplits = cleanHtml.split(Regex("(?i)<tr[^>]*>"))
         val allRows = mutableListOf<String>()
         if (rawRowSplits.size > 1) {
@@ -939,7 +932,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
             var area = ""
             var plots = ""
 
-            // 1. Parse Summary Info from all rows with 2 cells
             for (row in allRows) {
                 val cells = extractCellsFromRow(row)
                 if (cells.size == 2) {
@@ -970,7 +962,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
             )
             extractedTotalArea = area.replace("একর", "").replace("Acre", "").trim()
 
-            // 2. Parse All Plot Details Rows across ALL rows in the document
             val seenPlotKeys = mutableSetOf<String>()
             for (row in allRows) {
                 if (row.contains("<th", ignoreCase = true)) continue
@@ -1007,7 +998,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
                 }
             }
 
-            // Fallback: If owners count is still less than expected plot count, also check every sub-table in tableList
             if (owners.isEmpty() || (plots.toIntOrNull() != null && owners.size < (plots.toIntOrNull() ?: 0))) {
                 for (t in tableList) {
                     val tRowMatcher = Pattern.compile("(?i)<tr[^>]*>(.*?)</tr>", Pattern.DOTALL).matcher(t)
@@ -1049,14 +1039,13 @@ class BanglarbhumiClient(private val context: Context? = null) {
                 }
             }
         } else {
-            // Plot Search
+
             val (dagMain, dagBata) = splitSearchNumber(searchNumber)
             var plotNo = dagMain
             var landClass = ""
             var area = ""
             var bata = dagBata
 
-            // 1. Scan for Plot Summary
             for (row in allRows) {
                 val cells = extractCellsFromRow(row)
                 if (cells.size == 2) {
@@ -1090,7 +1079,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
             )
             extractedTotalArea = area.replace("একর", "").replace("Acre", "").trim()
 
-            // 2. Rayats / Owners Table across ALL rows
             val seenKhatianKeys = mutableSetOf<String>()
             for (row in allRows) {
                 if (row.contains("<th", ignoreCase = true)) continue
@@ -1102,7 +1090,9 @@ class BanglarbhumiClient(private val context: Context? = null) {
                     val isSummaryRow = cells.any { it.contains("Click Here", ignoreCase = true) || it.contains("ম্যাপ") } ||
                             (cells.size == 4 && (khNo == plotNo || khNo == dagMain))
                     if (hasDigits && !isHeader && !isSummaryRow) {
-                        val rayatName = cells.getOrElse(1) { "রায়তের নাম অনুপলব্ধ" }.ifBlank { "রায়তের নাম অনুপলব্ধ" }
+                        val rawRayat = cells.getOrElse(1) { "রায়তের নাম অনুপলব্ধ" }.ifBlank { "রায়তের নাম অনুপলব্ধ" }
+                        val cleanRayat = rawRayat.replace(BYAKTI_REGEX, " ").trim()
+                        val rayatName = if (cleanRayat.isNotBlank() && cleanRayat != "-") cleanRayat else rawRayat
                         val guardian = cells.getOrElse(2) { "-" }.ifBlank { "-" }
                         val share = cells.getOrElse(3) { "1.0000" }.ifBlank { "1.0000" }
                         val areaAcre = cells.getOrElse(4) { "0.0000" }.ifBlank { "0.0000" }
@@ -1120,7 +1110,8 @@ class BanglarbhumiClient(private val context: Context? = null) {
                                     areaAcre = areaAcre,
                                     remarks = remarks,
                                     landClassification = landClass.ifBlank { "শালি" },
-                                    possessor = possessor
+                                    possessor = possessor,
+                                    rayatType = "ব্যক্তি"
                                 )
                             )
                         }
@@ -1128,7 +1119,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
                 }
             }
 
-            // Fallback for Plot Search across sub-tables in tableList
             if (owners.isEmpty()) {
                 for (t in tableList) {
                     val tRowMatcher = Pattern.compile("(?i)<tr[^>]*>(.*?)</tr>", Pattern.DOTALL).matcher(t)
@@ -1143,7 +1133,9 @@ class BanglarbhumiClient(private val context: Context? = null) {
                             val isSummaryRow = cells.any { it.contains("Click Here", ignoreCase = true) || it.contains("ম্যাপ") } ||
                                     (cells.size == 4 && (khNo == plotNo || khNo == dagMain))
                             if (hasDigits && !isHeader && !isSummaryRow) {
-                                val rayatName = cells.getOrElse(1) { "রায়তের নাম অনুপলব্ধ" }.ifBlank { "রায়তের নাম অনুপলব্ধ" }
+                                val rawRayat = cells.getOrElse(1) { "রায়তের নাম অনুপলব্ধ" }.ifBlank { "রায়তের নাম অনুপলব্ধ" }
+                                val cleanRayat = rawRayat.replace(BYAKTI_REGEX, " ").trim()
+                                val rayatName = if (cleanRayat.isNotBlank() && cleanRayat != "-") cleanRayat else rawRayat
                                 val guardian = cells.getOrElse(2) { "-" }.ifBlank { "-" }
                                 val share = cells.getOrElse(3) { "1.0000" }.ifBlank { "1.0000" }
                                 val areaAcre = cells.getOrElse(4) { "0.0000" }.ifBlank { "0.0000" }
@@ -1161,7 +1153,8 @@ class BanglarbhumiClient(private val context: Context? = null) {
                                             areaAcre = areaAcre,
                                             remarks = remarks,
                                             landClassification = landClass.ifBlank { "শালি" },
-                                            possessor = possessor
+                                            possessor = possessor,
+                                            rayatType = "ব্যক্তি"
                                         )
                                     )
                                 }
@@ -1202,7 +1195,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
         }
         if (cells.isNotEmpty()) return cells
 
-        // Fallback for unclosed <td> or <th> tags
         val openMatcher = Pattern.compile("(?i)<(?:td|th)[^>]*>([^<]*)", Pattern.DOTALL).matcher(rowContent)
         while (openMatcher.find()) {
             val text = openMatcher.group(1).orEmpty()
@@ -1236,8 +1228,7 @@ class BanglarbhumiClient(private val context: Context? = null) {
         searchNumber: String
     ): String {
         val isPlot = searchType == SearchType.PLOT
-        // For Plot search: use cleaned portal HTML to maintain the authentic 4-col summary + purple note + 7-col rayats table
-        // For Khatian search: use generateCleanTableMarkup for 100% full-screen responsive table layout
+
         val tableContent = if (isPlot && extractedHtml.contains("<table", ignoreCase = true)) {
             cleanPortalHtml(extractedHtml)
         } else if (!isPlot && (parsedData.owners.isNotEmpty() || parsedData.khatianSummary != null)) {
@@ -1406,11 +1397,10 @@ class BanglarbhumiClient(private val context: Context? = null) {
     }
 
     private fun cleanPortalHtml(rawHtml: String): String {
-        // Strip everything before the first <table tag so unstyled portal headers are not duplicated
+
         val firstTableIdx = rawHtml.indexOf("<table", ignoreCase = true)
         var fromTable = if (firstTableIdx >= 0) rawHtml.substring(firstTableIdx) else rawHtml
 
-        // 1. Remove duplicate unstyled portal headers & formatting artifacts
         fromTable = fromTable
             .replace(Regex("(?i)<(?:h[1-6]|div|p|center)[^>]*>\\s*Live\\s*Data\\s*As\\s*On.*?</(?:h[1-6]|div|p|center)>"), "")
             .replace(Regex("(?i)<(?:h[1-6]|div|p|center|span|font|b)[^>]*>\\s*জে\\.?\\s*এল.*?</(?:h[1-6]|div|p|center|span|font|b)>"), "")
@@ -1423,12 +1413,10 @@ class BanglarbhumiClient(private val context: Context? = null) {
             .replace(Regex("(?i)\\s*height=[\"'][^\"']*[\"']"), "")
             .replace(Regex("(?i)style=[\"'][^\"']*width:[^\"']*[\"']"), "")
 
-        // 2. Remove "দাগের ম্যাপ" column header and "Click Here" link from top summary table
         fromTable = fromTable
             .replace(Regex("(?is)<th[^>]*>(?:(?!</th>).)*(?:দাগের\\s*ম্যাপ|ম্যাপ|Map)(?:(?!</th>).)*</th>"), "")
             .replace(Regex("(?is)<td[^>]*>(?:(?!</td>).)*(?:Click\\s*Here|showMap)(?:(?!</td>).)*</td>"), "")
 
-        // 3. Remove trailing captcha / input / form / empty box tables after rayats table
         fromTable = fromTable
             .replace(Regex("(?is)<form[^>]*>.*?</form>"), "")
             .replace(Regex("(?is)<table[^>]*>(?:(?!</table>).)*(?:<input|<textarea|<button|captcha|type=[\"']text[\"'])(?:(?!</table>).)*</table>"), "")
@@ -1437,7 +1425,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
             .replace(Regex("(?is)<button[^>]*>.*?</button>"), "")
             .replace(Regex("(?is)<table[^>]*>(?:\\s*|&nbsp;|<(?:tr|td|th|tbody|thead|div|p|span|br)[^>]*>|</td>|</tr>|</tbody>|</thead>|</p>|</div>|</span>)*</table>"), "")
 
-        // 4. Ensure we don't keep any trailing non-data tables after the rayat table ends
         val rayatIdx = maxOf(
             fromTable.lastIndexOf("খতিয়ান", ignoreCase = true),
             fromTable.lastIndexOf("Khatian", ignoreCase = true),
@@ -1592,12 +1579,7 @@ class BanglarbhumiClient(private val context: Context? = null) {
                 } else {
                     "${o.areaAcre} (${o.landClassification})"
                 }
-                val cleanOwner = if (o.ownerName.endsWith("ব্যক্তি")) {
-                    val c = o.ownerName.removeSuffix("ব্যক্তি").trim()
-                    if (c.isBlank()) o.ownerName else c
-                } else {
-                    o.ownerName
-                }
+                val cleanOwner = o.ownerName.replace(BYAKTI_REGEX, " ").trim().ifBlank { o.ownerName }
                 val rayatTypeHtml = if (o.rayatType.isNotBlank()) "<br><font color='purple'>${o.rayatType}</font>" else "<br><font color='purple'>ব্যক্তি</font>"
                 sb.append("""
                     <tr>

@@ -107,7 +107,6 @@ object PdfStorageManager {
                 targetDir.mkdirs()
             }
 
-            // Extract clean names for the file
             val rawMouza = result.mouzaName
                 .replace(Regex("\\s*\\[\\d+]"), "")
                 .replace(Regex("[^a-zA-Z0-9\\u0980-\\u09FF]"), "_")
@@ -121,14 +120,12 @@ object PdfStorageManager {
 
             val tempFile = File(context.cacheDir, "temp_render_${System.currentTimeMillis()}.pdf")
 
-            // Generate multi-page vector PDF with official styling and full data
             PdfExporter.generateLandRecordPdf(context, result, tempFile)
 
             if (!tempFile.exists() || tempFile.length() == 0L) {
                 return@withContext Result.failure(IOException("PDF generation failed"))
             }
 
-            // Copy to target directory
             try {
                 FileOutputStream(destinationFile).use { out ->
                     FileInputStream(tempFile).use { input ->
@@ -145,7 +142,6 @@ object PdfStorageManager {
 
             try { tempFile.delete() } catch (_: Exception) {}
 
-            // Trigger MediaScanner so files immediately appear in file managers and Downloads app
             MediaScannerConnection.scanFile(
                 context,
                 arrayOf(destinationFile.absolutePath),
@@ -153,7 +149,6 @@ object PdfStorageManager {
                 null
             )
 
-            // Save metadata for instant listing in Saved tab
             saveMetadata(
                 context = context,
                 fileName = fileName,
@@ -273,7 +268,7 @@ object PdfStorageManager {
     }
 
     private fun parseFromFileName(file: File, isStarred: Boolean = false): SavedPdfItem {
-        // Example: Karakbere_Dag_314.pdf or Karakbere_Khatian_59-1.pdf
+
         val baseName = file.nameWithoutExtension
         val parts = baseName.split("_")
         val isDag = parts.any { it.equals("Dag", ignoreCase = true) || it.equals("Plot", ignoreCase = true) }
