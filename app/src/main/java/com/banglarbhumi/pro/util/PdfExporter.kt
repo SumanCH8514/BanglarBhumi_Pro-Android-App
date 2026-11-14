@@ -1,12 +1,16 @@
 package com.banglarbhumi.pro.util
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
+import com.banglarbhumi.pro.R
 import com.banglarbhumi.pro.data.model.LandRecordResult
 import com.banglarbhumi.pro.data.model.SearchType
 import kotlinx.coroutines.Dispatchers
@@ -22,7 +26,7 @@ object PdfExporter {
     private const val PAGE_WIDTH = 595
     private const val PAGE_HEIGHT = 842
     private const val MARGIN = 30f
-    private const val CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2)
+    private const val CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2) // 535f
 
     suspend fun generateLandRecordPdf(
         context: Context,
@@ -31,14 +35,22 @@ object PdfExporter {
     ): File = withContext(Dispatchers.IO) {
         val document = PdfDocument()
 
-        val paint = Paint().apply {
+        val fillPaint = Paint().apply {
             isAntiAlias = true
+            style = Paint.Style.FILL
+        }
+
+        val strokePaint = Paint().apply {
+            isAntiAlias = true
+            style = Paint.Style.STROKE
+            strokeWidth = 1f
+            color = Color.parseColor("#C0C0C0")
         }
 
         val textPaint = Paint().apply {
             isAntiAlias = true
             textSize = 9.5f
-            color = Color.parseColor("#1E293B")
+            color = Color.BLACK
         }
 
         var currentPageNumber = 1
@@ -46,231 +58,201 @@ object PdfExporter {
         var page = document.startPage(pageInfo)
         var canvas = page.canvas
 
-        fun drawHeader(canvas: Canvas) {
-            // Top Green Banner
-            paint.style = Paint.Style.FILL
-            paint.color = Color.parseColor("#0F5132")
-            canvas.drawRect(0f, 0f, PAGE_WIDTH.toFloat(), 75f, paint)
+        var y = MARGIN
 
-            // Header Titles
-            paint.color = Color.WHITE
-            paint.textSize = 15f
-            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            canvas.drawText("Government of West Bengal", MARGIN, 28f, paint)
-
-            paint.textSize = 10.5f
-            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            canvas.drawText("Department of Land & Land Reforms • BanglarBhumi Pro Record", MARGIN, 46f, paint)
-
-            val liveTimeStr = if (result.liveTimestamp.isNotBlank()) {
-                "Live Portal Data: ${result.liveTimestamp}"
-            } else {
-                val sdf = SimpleDateFormat("dd/MM/yyyy, hh:mm a", Locale.getDefault())
-                "Generated: ${sdf.format(Date(result.queryTimestamp))}"
-            }
-            paint.textSize = 8.5f
-            canvas.drawText(liveTimeStr, MARGIN, 62f, paint)
-
-            // SumanOnline Branding Pill at top right
-            paint.color = Color.parseColor("#157347")
-            canvas.drawRoundRect(PAGE_WIDTH - 180f, 18f, PAGE_WIDTH - MARGIN, 56f, 8f, 8f, paint)
-            paint.color = Color.WHITE
-            paint.textSize = 9f
-            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            canvas.drawText("SumanOnline Project", PAGE_WIDTH - 170f, 36f, paint)
-            paint.textSize = 8f
-            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            canvas.drawText("Verified Portal Record", PAGE_WIDTH - 170f, 49f, paint)
-        }
-
-        fun drawFooter(canvas: Canvas, pageNum: Int) {
-            paint.style = Paint.Style.FILL
-            paint.color = Color.parseColor("#94A3B8")
-            paint.strokeWidth = 0.5f
-            canvas.drawLine(MARGIN, PAGE_HEIGHT - 35f, PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 35f, paint)
-
-            paint.color = Color.parseColor("#64748B")
-            paint.textSize = 8f
-            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            canvas.drawText(
-                "Notice: Computer-generated copy for informational reference. Official copies issued by BL&LRO.",
-                MARGIN,
-                PAGE_HEIGHT - 22f,
-                paint
-            )
-            canvas.drawText(
-                "Page $pageNum",
-                PAGE_WIDTH - MARGIN - 35f,
-                PAGE_HEIGHT - 22f,
-                paint
-            )
-        }
-
-        // Draw initial page header
-        drawHeader(canvas)
-
-        var y = 92f
-
-        // Location Info Card (District, Block, Mouza, JL, Thana, Record Number)
-        paint.color = Color.parseColor("#F8FAFC")
-        paint.style = Paint.Style.FILL
-        canvas.drawRoundRect(MARGIN, y, PAGE_WIDTH - MARGIN, y + 68f, 8f, 8f, paint)
-
-        paint.color = Color.parseColor("#E2E8F0")
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 1f
-        canvas.drawRoundRect(MARGIN, y, PAGE_WIDTH - MARGIN, y + 68f, 8f, 8f, paint)
-        paint.style = Paint.Style.FILL
-
-        paint.color = Color.parseColor("#0F172A")
-        paint.textSize = 9.5f
-        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-
-        val cleanDist = result.districtName.replace(Regex("\\s*\\([^)]*\\)"), "").trim()
-        val cleanBlk = result.blockName.replace(Regex("\\s*\\([^)]*\\)"), "").trim()
-        val cleanMouza = result.mouzaName.replace(Regex("\\s*\\[\\d+\\]"), "").trim()
-
-        canvas.drawText("District: $cleanDist", MARGIN + 12f, y + 20f, paint)
-        canvas.drawText("Block: $cleanBlk", MARGIN + 12f, y + 38f, paint)
-        if (result.thanaName.isNotBlank()) {
-            canvas.drawText("Thana: ${result.thanaName}", MARGIN + 12f, y + 56f, paint)
+        // --- 1. Top Headers (Live Data & JL / Thana) ---
+        val liveTime = if (result.liveTimestamp.isNotBlank()) {
+            "(Live Data As On ${result.liveTimestamp})"
         } else {
-            canvas.drawText("Block Code: ${result.blockCode}", MARGIN + 12f, y + 56f, paint)
+            val sdf = SimpleDateFormat("dd/MM/yyyy,HH:mm:ss", Locale.getDefault())
+            "(Live Data As On ${sdf.format(Date(result.queryTimestamp))})"
         }
 
-        canvas.drawText("Mouza: $cleanMouza", 295f, y + 20f, paint)
-        val jlText = if (result.jlNumber.isNotBlank()) "J.L. No: ${result.jlNumber}" else "Mouza Code: ${result.mouzaCode}"
-        canvas.drawText(jlText, 295f, y + 38f, paint)
+        textPaint.color = Color.parseColor("#0000FF")
+        textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        textPaint.textSize = 12.5f
+        textPaint.textAlign = Paint.Align.LEFT
+        canvas.drawText(liveTime, MARGIN, y + 12f, textPaint)
+        y += 18f
 
-        val typeText = if (result.searchType == SearchType.PLOT) "Plot / Dag No: ${result.searchNumber}" else "Khatian No: ${result.searchNumber}"
-        paint.color = Color.parseColor("#0F5132")
-        canvas.drawText(typeText, 295f, y + 56f, paint)
+        val jl = result.jlNumber.ifBlank { result.mouzaCode }
+        val thana = result.thanaName.ifBlank { result.blockName }
+        val locationText = "জে.এল নং : $jl   থানা : $thana"
 
-        y += 82f
+        textPaint.color = Color.parseColor("#800000")
+        textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        textPaint.textSize = 12f
+        canvas.drawText(locationText, MARGIN, y + 12f, textPaint)
+        y += 20f
 
-        // Summary Table Section
-        if (result.searchType == SearchType.PLOT) {
-            paint.color = Color.parseColor("#E2F0D9")
-            canvas.drawRect(MARGIN, y, PAGE_WIDTH - MARGIN, y + 22f, paint)
+        // --- 2. Table 1: Summary Table ---
+        if (result.searchType == SearchType.KHATIAN) {
+            val ks = result.khatianSummary
+            val firstOwner = result.owners.firstOrNull()
 
-            paint.color = Color.parseColor("#155724")
-            paint.textSize = 9f
-            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            val displayKhatian = ks?.khatianNo?.ifBlank { result.searchNumber } ?: result.searchNumber
+            val ownerDisplayName = ks?.ownerName?.ifBlank { firstOwner?.ownerName ?: "-" } ?: "-"
+            val guardianDisplayName = ks?.guardianName?.ifBlank { firstOwner?.guardianName ?: "-" } ?: "-"
+            val rayatTypeDisplayName = ks?.rayatType?.ifBlank { "ব্যক্তি" } ?: "ব্যক্তি"
+            val addressDisplayName = ks?.address?.ifBlank { "নিজ" } ?: "নিজ"
+            val areaDisplayName = ks?.totalAreaAcre?.ifBlank { "${result.totalAreaAcre} একর" } ?: "${result.totalAreaAcre} একর"
+            val plotCountDisplayName = ks?.plotCount?.ifBlank { "${result.owners.size}" } ?: "${result.owners.size}"
 
-            canvas.drawText("দাগ নং (Plot No)", MARGIN + 10f, y + 15f, paint)
-            canvas.drawText("শ্রেণী (Classification)", MARGIN + 160f, y + 15f, paint)
-            canvas.drawText("মোট পরিমাণ (Total Area)", MARGIN + 350f, y + 15f, paint)
+            val summaryRows = listOf(
+                Pair("খতিয়ান নং :", displayKhatian),
+                Pair("অত্রস্বত্বের দখলকারের নাম :", ownerDisplayName),
+                Pair("পিতা/স্বামী :", guardianDisplayName),
+                Pair("রায়তের ধরণ :", rayatTypeDisplayName),
+                Pair("ঠিকানা :", addressDisplayName),
+                Pair("জমির পরিমাণ: ", areaDisplayName),
+                Pair("দাগের সংখ্যা :", plotCountDisplayName)
+            )
 
-            y += 22f
-            paint.color = Color.WHITE
-            canvas.drawRect(MARGIN, y, PAGE_WIDTH - MARGIN, y + 22f, paint)
-            paint.color = Color.parseColor("#D0D5DD")
-            paint.style = Paint.Style.STROKE
-            canvas.drawRect(MARGIN, y - 22f, PAGE_WIDTH - MARGIN, y + 22f, paint)
-            paint.style = Paint.Style.FILL
+            val col1W = 235f
+            val rowH = 21f
 
-            paint.color = Color.parseColor("#1E293B")
-            paint.textSize = 9.5f
-            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            for ((idx, row) in summaryRows.withIndex()) {
+                val rowTop = y
+                val rowBottom = y + rowH
 
-            val landClass = result.plotSummary?.landClassification?.ifBlank { null }
+                // Row background (alternating #FFFFFF and #EAEAEA)
+                fillPaint.color = if (idx % 2 == 0) Color.WHITE else Color.parseColor("#EAEAEA")
+                canvas.drawRect(MARGIN, rowTop, MARGIN + CONTENT_WIDTH, rowBottom, fillPaint)
+
+                // Borders
+                strokePaint.color = Color.parseColor("#C0C0C0")
+                canvas.drawRect(MARGIN, rowTop, MARGIN + col1W, rowBottom, strokePaint)
+                canvas.drawRect(MARGIN + col1W, rowTop, MARGIN + CONTENT_WIDTH, rowBottom, strokePaint)
+
+                // Col 1 Text
+                textPaint.color = Color.BLACK
+                textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textPaint.textSize = 9.5f
+                textPaint.textAlign = Paint.Align.LEFT
+                canvas.drawText(row.first, MARGIN + 8f, rowTop + 14.5f, textPaint)
+
+                // Col 2 Text
+                textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                canvas.drawText(row.second, MARGIN + col1W + 8f, rowTop + 14.5f, textPaint)
+
+                y += rowH
+            }
+            y += 14f
+        } else {
+            // Plot Summary Table (3 Columns matching portal layout)
+            val col1W = 140f
+            val col2W = 140f
+            val col3W = CONTENT_WIDTH - col1W - col2W // 255f
+            val rowH = 21f
+
+            // Header
+            fillPaint.color = Color.parseColor("#D5E8D4")
+            canvas.drawRect(MARGIN, y, MARGIN + CONTENT_WIDTH, y + rowH, fillPaint)
+
+            strokePaint.color = Color.parseColor("#B0B0B0")
+            canvas.drawRect(MARGIN, y, MARGIN + col1W, y + rowH, strokePaint)
+            canvas.drawRect(MARGIN + col1W, y, MARGIN + col1W + col2W, y + rowH, strokePaint)
+            canvas.drawRect(MARGIN + col1W + col2W, y, MARGIN + CONTENT_WIDTH, y + rowH, strokePaint)
+
+            textPaint.color = Color.BLACK
+            textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textPaint.textSize = 9.5f
+            textPaint.textAlign = Paint.Align.CENTER
+
+            canvas.drawText("দাগ নং", MARGIN + (col1W / 2f), y + 14.5f, textPaint)
+            canvas.drawText("শ্রেণী", MARGIN + col1W + (col2W / 2f), y + 14.5f, textPaint)
+            canvas.drawText("জমির মোট পরিমাণ(একর)", MARGIN + col1W + col2W + (col3W / 2f), y + 14.5f, textPaint)
+            y += rowH
+
+            // Data Row
+            fillPaint.color = Color.WHITE
+            canvas.drawRect(MARGIN, y, MARGIN + CONTENT_WIDTH, y + rowH, fillPaint)
+
+            strokePaint.color = Color.parseColor("#C0C0C0")
+            canvas.drawRect(MARGIN, y, MARGIN + col1W, y + rowH, strokePaint)
+            canvas.drawRect(MARGIN + col1W, y, MARGIN + col1W + col2W, y + rowH, strokePaint)
+            canvas.drawRect(MARGIN + col1W + col2W, y, MARGIN + CONTENT_WIDTH, y + rowH, strokePaint)
+
+            textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            val plotClass = result.plotSummary?.landClassification?.ifBlank { null }
                 ?: result.owners.firstOrNull()?.landClassification?.ifBlank { null }
-                ?: "বাস্তু / শালি"
+                ?: "শালি"
 
-            canvas.drawText(result.searchNumber, MARGIN + 10f, y + 15f, paint)
-            canvas.drawText(landClass, MARGIN + 160f, y + 15f, paint)
-            canvas.drawText("${result.totalAreaAcre} একর (Acre)", MARGIN + 350f, y + 15f, paint)
+            canvas.drawText(result.searchNumber, MARGIN + (col1W / 2f), y + 14.5f, textPaint)
+            canvas.drawText(plotClass, MARGIN + col1W + (col2W / 2f), y + 14.5f, textPaint)
+            canvas.drawText(result.totalAreaAcre, MARGIN + col1W + col2W + (col3W / 2f), y + 14.5f, textPaint)
+            y += rowH + 14f
+        }
 
-            y += 34f
+        // --- 3. Subheading & Purple Note ---
+        val sectionTitle = if (result.searchType == SearchType.KHATIAN)
+            "অত্রস্বত্বের দাগের বিবরণ ও পরিমাণ:"
+        else
+            "দাগের অত্রস্বত্বের রায়তের বিবরণ:"
+
+        textPaint.color = Color.BLACK
+        textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        textPaint.textSize = 10.5f
+        textPaint.textAlign = Paint.Align.LEFT
+        canvas.drawText(sectionTitle, MARGIN, y + 10f, textPaint)
+        y += 14f
+
+        val sectionNote = if (result.searchType == SearchType.KHATIAN)
+            "(* দাগের অত্রস্বত্বের জমির যথার্থ পরিমাণ, দাগের মধ্যে অত্রস্বত্বের অংশে অনুসারে নির্ধারিত হইবে।)"
+        else
+            "(* রায়তের অংশ অনুযায়ী দাগের জমির যথার্থ পরিমাণ নির্ধারিত হইবে।)"
+
+        textPaint.color = Color.parseColor("#800080") // Purple
+        textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
+        textPaint.textSize = 8.8f
+        canvas.drawText(sectionNote, MARGIN, y + 9f, textPaint)
+        y += 15f
+
+        // --- 4. Table 2: Detail Table Layout Specifications ---
+        val isKhatian = result.searchType == SearchType.KHATIAN
+
+        val colWidths: FloatArray = if (isKhatian) {
+            // দাগ নং, শ্রেণী, অংশ, অংশ পরিমাণ(একর), দখলদার, মন্তব্য
+            floatArrayOf(65f, 75f, 95f, 130f, 85f, 85f) // Sum = 535f
         } else {
-            // Khatian Summary Table
-            val kSum = result.khatianSummary
-            if (kSum != null && (kSum.ownerName.isNotBlank() || kSum.guardianName.isNotBlank())) {
-                paint.color = Color.parseColor("#E2F0D9")
-                canvas.drawRect(MARGIN, y, PAGE_WIDTH - MARGIN, y + 22f, paint)
+            // খতিয়ান নং, দখলকারের নাম, পিতা/স্বামী, অংশ, অংশ পরিমাণ(একর) (শ্রেণী), দখলদার, মন্তব্য
+            floatArrayOf(60f, 125f, 110f, 55f, 105f, 40f, 40f) // Sum = 535f
+        }
 
-                paint.color = Color.parseColor("#155724")
-                paint.textSize = 9f
-                paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        val colHeaders: Array<String> = if (isKhatian) {
+            arrayOf("দাগ নং", "শ্রেণী", "অংশ", "অংশ পরিমাণ(একর)", "দখলদার", "মন্তব্য")
+        } else {
+            arrayOf("খতিয়ান নং", "দখলকারের নাম", "পিতা/স্বামী", "অংশ", "অংশ পরিমাণ(একর)", "দখলদার", "মন্তব্য")
+        }
 
-                canvas.drawText("খতিয়ান নং", MARGIN + 8f, y + 15f, paint)
-                canvas.drawText("রায়তের নাম", MARGIN + 80f, y + 15f, paint)
-                canvas.drawText("পিতা/স্বামী", MARGIN + 220f, y + 15f, paint)
-                canvas.drawText("মোট দাগ", MARGIN + 360f, y + 15f, paint)
-                canvas.drawText("মোট জমি", MARGIN + 430f, y + 15f, paint)
+        val rowH = 20.5f
 
-                y += 22f
-                paint.color = Color.WHITE
-                canvas.drawRect(MARGIN, y, PAGE_WIDTH - MARGIN, y + 22f, paint)
-                paint.color = Color.parseColor("#D0D5DD")
-                paint.style = Paint.Style.STROKE
-                canvas.drawRect(MARGIN, y - 22f, PAGE_WIDTH - MARGIN, y + 22f, paint)
-                paint.style = Paint.Style.FILL
+        fun drawTable2Header(canvas: Canvas, topY: Float) {
+            fillPaint.color = Color.parseColor("#D5E8D4")
+            canvas.drawRect(MARGIN, topY, MARGIN + CONTENT_WIDTH, topY + rowH, fillPaint)
 
-                paint.color = Color.parseColor("#1E293B")
-                paint.textSize = 9f
-                paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            strokePaint.color = Color.parseColor("#B0B0B0")
+            textPaint.color = Color.BLACK
+            textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textPaint.textSize = 9f
+            textPaint.textAlign = Paint.Align.CENTER
 
-                canvas.drawText(result.searchNumber, MARGIN + 8f, y + 15f, paint)
-                canvas.drawText(kSum.ownerName.take(18), MARGIN + 80f, y + 15f, paint)
-                canvas.drawText(kSum.guardianName.take(18), MARGIN + 220f, y + 15f, paint)
-                canvas.drawText(kSum.plotCount.ifBlank { "${result.owners.size}" }, MARGIN + 360f, y + 15f, paint)
-                canvas.drawText("${result.totalAreaAcre} একর", MARGIN + 430f, y + 15f, paint)
-
-                y += 34f
+            var currentX = MARGIN
+            for (i in colHeaders.indices) {
+                val w = colWidths[i]
+                canvas.drawRect(currentX, topY, currentX + w, topY + rowH, strokePaint)
+                canvas.drawText(colHeaders[i], currentX + (w / 2f), topY + 14f, textPaint)
+                currentX += w
             }
         }
 
-        // Section Title: Ownership / Plot Details
-        paint.color = Color.parseColor("#0F5132")
-        paint.textSize = 10.5f
-        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        val sectionTitle = if (result.searchType == SearchType.PLOT)
-            "দাগের অত্রস্বত্বের রায়তের বিবরণ (Plot Ownership Details)"
-        else
-            "খতিয়ানের অন্তর্ভূক্ত দাগসমূহের বিবরণ (Khatian Plot Details)"
-        canvas.drawText(sectionTitle, MARGIN, y, paint)
+        drawTable2Header(canvas, y)
+        y += rowH
 
-        y += 12f
-
-        // Table Header
-        fun drawTableHeader(canvas: Canvas, yPos: Float) {
-            paint.color = Color.parseColor("#D5E8D4")
-            paint.style = Paint.Style.FILL
-            canvas.drawRect(MARGIN, yPos, PAGE_WIDTH - MARGIN, yPos + 24f, paint)
-
-            paint.color = Color.parseColor("#155724")
-            paint.textSize = 8.5f
-            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-
-            canvas.drawText("ক্রঃ", MARGIN + 6f, yPos + 16f, paint)
-            val col2 = if (result.searchType == SearchType.PLOT) "খতিয়ান নং" else "দাগ নং"
-            canvas.drawText(col2, MARGIN + 26f, yPos + 16f, paint)
-            val col3 = if (result.searchType == SearchType.PLOT) "দখলকারের নাম" else "শ্রেণী"
-            canvas.drawText(col3, MARGIN + 90f, yPos + 16f, paint)
-            val col4 = if (result.searchType == SearchType.PLOT) "পিতা/স্বামী" else "মোট পরিমাণ"
-            canvas.drawText(col4, MARGIN + 235f, yPos + 16f, paint)
-            canvas.drawText("অংশ", MARGIN + 365f, yPos + 16f, paint)
-            canvas.drawText("অংশ পরিমাণ", MARGIN + 420f, yPos + 16f, paint)
-            canvas.drawText("দখলদার/শ্রেণী", MARGIN + 485f, yPos + 16f, paint)
-
-            // Header border
-            paint.color = Color.parseColor("#B7D5B5")
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 1f
-            canvas.drawRect(MARGIN, yPos, PAGE_WIDTH - MARGIN, yPos + 24f, paint)
-            paint.style = Paint.Style.FILL
-        }
-
-        drawTableHeader(canvas, y)
-        y += 24f
-
-        val rowHeight = 22f
-
+        // Draw Table 2 Rows
         for ((index, owner) in result.owners.withIndex()) {
-            // Check if page overflow
-            if (y + rowHeight > PAGE_HEIGHT - 50f) {
-                drawFooter(canvas, currentPageNumber)
+            // Check for page overflow
+            if (y + rowH > PAGE_HEIGHT - MARGIN) {
                 document.finishPage(page)
 
                 currentPageNumber++
@@ -278,51 +260,117 @@ object PdfExporter {
                 page = document.startPage(pageInfo)
                 canvas = page.canvas
 
-                drawHeader(canvas)
-                y = 90f
-                drawTableHeader(canvas, y)
-                y += 24f
+                y = MARGIN
+                drawTable2Header(canvas, y)
+                y += rowH
             }
 
-            // Alternating Row background
-            if (index % 2 == 1) {
-                paint.color = Color.parseColor("#F9FBF9")
-                paint.style = Paint.Style.FILL
-                canvas.drawRect(MARGIN, y, PAGE_WIDTH - MARGIN, y + rowHeight, paint)
+            val rowTop = y
+            val rowBottom = y + rowH
+
+            // Background
+            fillPaint.color = if (index % 2 == 0) Color.WHITE else Color.parseColor("#FAFAFA")
+            canvas.drawRect(MARGIN, rowTop, MARGIN + CONTENT_WIDTH, rowBottom, fillPaint)
+
+            strokePaint.color = Color.parseColor("#C0C0C0")
+
+            val cells = if (isKhatian) {
+                arrayOf(
+                    owner.khatianOrPlotNo.ifBlank { "-" },
+                    owner.landClassification.ifBlank { "-" },
+                    owner.share.ifBlank { "-" },
+                    owner.areaAcre.ifBlank { "-" },
+                    owner.possessor.ifBlank { "Nil" },
+                    owner.remarks.ifBlank { "Nil" }
+                )
+            } else {
+                arrayOf(
+                    owner.khatianOrPlotNo.ifBlank { "-" },
+                    owner.ownerName.ifBlank { "-" },
+                    owner.guardianName.ifBlank { "-" },
+                    owner.share.ifBlank { "-" },
+                    owner.areaAcre.ifBlank { "-" },
+                    owner.possessor.ifBlank { "Nil" },
+                    owner.remarks.ifBlank { "Nil" }
+                )
             }
 
-            // Cell border line
-            paint.color = Color.parseColor("#E2E8F0")
-            paint.strokeWidth = 0.5f
-            paint.style = Paint.Style.STROKE
-            canvas.drawRect(MARGIN, y, PAGE_WIDTH - MARGIN, y + rowHeight, paint)
-            paint.style = Paint.Style.FILL
+            var currentX = MARGIN
+            for (i in cells.indices) {
+                val w = colWidths[i]
+                canvas.drawRect(currentX, rowTop, currentX + w, rowBottom, strokePaint)
 
-            // Text content
-            textPaint.color = Color.parseColor("#1E293B")
-            textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            textPaint.textSize = 8.5f
+                val text = cells[i]
 
-            val slNo = (index + 1).toString()
-            val recNo = owner.khatianOrPlotNo.ifBlank { result.searchNumber }
-            val name = owner.ownerName.ifBlank { owner.landClassification }.take(22)
-            val guardian = owner.guardianName.take(20)
-            val share = owner.share
-            val shareArea = owner.areaAcre
-            val possessor = owner.possessor.ifBlank { owner.remarks }.ifBlank { "Nil" }.take(10)
+                // Specific styling matching uploaded portal image
+                if (text.contains("বর্গা")) {
+                    textPaint.color = Color.parseColor("#0000FF") // Blue for Barga
+                    textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                } else if (text.equals("Nil", ignoreCase = true) || text.contains("Nil Remarks", ignoreCase = true)) {
+                    textPaint.color = Color.parseColor("#CC0000") // Red for Nil / Nil Remarks
+                    textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                } else {
+                    textPaint.color = Color.BLACK
+                    textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                }
 
-            canvas.drawText(slNo, MARGIN + 6f, y + 15f, textPaint)
-            canvas.drawText(recNo, MARGIN + 26f, y + 15f, textPaint)
-            canvas.drawText(name, MARGIN + 90f, y + 15f, textPaint)
-            canvas.drawText(guardian, MARGIN + 235f, y + 15f, textPaint)
-            canvas.drawText(share, MARGIN + 365f, y + 15f, textPaint)
-            canvas.drawText(shareArea, MARGIN + 420f, y + 15f, textPaint)
-            canvas.drawText(possessor, MARGIN + 485f, y + 15f, textPaint)
+                textPaint.textSize = 8.5f
+                textPaint.textAlign = Paint.Align.CENTER
 
-            y += rowHeight
+                // Clip cell to prevent text bleeding into adjacent cells
+                canvas.save()
+                canvas.clipRect(currentX + 1f, rowTop + 1f, currentX + w - 1f, rowBottom - 1f)
+                canvas.drawText(text, currentX + (w / 2f), rowTop + 14f, textPaint)
+                canvas.restore()
+
+                currentX += w
+            }
+
+            y += rowH
         }
 
-        drawFooter(canvas, currentPageNumber)
+        // --- 5. Promotional Banner at the End of the PDF ---
+        val bannerBitmap = loadBannerBitmap(context)
+        if (bannerBitmap != null) {
+            val bannerWidth = CONTENT_WIDTH
+            val bannerAspect = bannerBitmap.height.toFloat() / bannerBitmap.width.toFloat()
+            val bannerHeight = bannerWidth * bannerAspect
+
+            y += 18f
+
+            // If banner exceeds page bottom, put it on a fresh page
+            if (y + bannerHeight > PAGE_HEIGHT - MARGIN) {
+                document.finishPage(page)
+
+                currentPageNumber++
+                pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, currentPageNumber).create()
+                page = document.startPage(pageInfo)
+                canvas = page.canvas
+                y = MARGIN
+            }
+
+            val srcRect = Rect(0, 0, bannerBitmap.width, bannerBitmap.height)
+            val dstRect = RectF(MARGIN, y, MARGIN + bannerWidth, y + bannerHeight)
+
+            val bmpPaint = Paint().apply {
+                isAntiAlias = true
+                isFilterBitmap = true
+            }
+
+            canvas.drawBitmap(bannerBitmap, srcRect, dstRect, bmpPaint)
+
+            // Subtle border around banner
+            val bPaint = Paint().apply {
+                isAntiAlias = true
+                style = Paint.Style.STROKE
+                strokeWidth = 0.8f
+                color = Color.parseColor("#CBD5E1")
+            }
+            canvas.drawRoundRect(dstRect, 4f, 4f, bPaint)
+
+            y += bannerHeight + 10f
+        }
+
         document.finishPage(page)
 
         val outputFile = destFile ?: run {
@@ -341,5 +389,33 @@ object PdfExporter {
         document.close()
 
         outputFile
+    }
+
+    private fun loadBannerBitmap(context: Context): Bitmap? {
+        // 1. Check direct file path specified by user
+        val userBannerPath = "E:/Projects/Android Application Dev/BanglarBhumi-Pro Application/Banglarbhumi_Pro-Banner.png"
+        try {
+            val file = File(userBannerPath)
+            if (file.exists() && file.canRead()) {
+                val bmp = BitmapFactory.decodeFile(file.absolutePath)
+                if (bmp != null) return bmp
+            }
+        } catch (_: Exception) {}
+
+        // 2. Check drawable resource bundled in APK
+        try {
+            val bmp = BitmapFactory.decodeResource(context.resources, R.drawable.banglarbhumi_pro_banner)
+            if (bmp != null) return bmp
+        } catch (_: Exception) {}
+
+        // 3. Check assets folder bundled in APK
+        try {
+            context.assets.open("Banglarbhumi_Pro-Banner.png").use { stream ->
+                val bmp = BitmapFactory.decodeStream(stream)
+                if (bmp != null) return bmp
+            }
+        } catch (_: Exception) {}
+
+        return null
     }
 }
