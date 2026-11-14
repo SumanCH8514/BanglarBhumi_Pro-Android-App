@@ -905,6 +905,17 @@ class BanglarbhumiClient(private val context: Context? = null) {
         val owners = mutableListOf<LandOwner>()
         var extractedTotalArea = ""
 
+        val cleanHtml = html
+            .replace(Regex("(?is)<script[^>]*>.*?</script>"), "")
+            .replace(Regex("(?is)<style[^>]*>.*?</style>"), "")
+
+        // Gather all <tr> elements across the document
+        val allRowMatcher = Pattern.compile("(?i)<tr[^>]*>(.*?)</tr>", Pattern.DOTALL).matcher(cleanHtml)
+        val allRows = mutableListOf<String>()
+        while (allRowMatcher.find()) {
+            allRows.add(allRowMatcher.group(1).orEmpty())
+        }
+
         if (searchType == SearchType.KHATIAN) {
             val (khMain, khBata) = splitSearchNumber(searchNumber)
             var khNo = khMain
@@ -916,15 +927,12 @@ class BanglarbhumiClient(private val context: Context? = null) {
             var area = ""
             var plots = ""
 
-            // Table 1 (Summary Table)
-            val summaryHtml = tableList.getOrNull(0) ?: ""
-            val rowMatcher = Pattern.compile("(?i)<tr[^>]*>(.*?)</tr>", Pattern.DOTALL).matcher(summaryHtml)
-            while (rowMatcher.find()) {
-                val row = rowMatcher.group(1).orEmpty()
+            // 1. Parse Summary Info from all rows with 2 cells
+            for (row in allRows) {
                 val cells = extractCellsFromRow(row)
-                if (cells.size >= 2) {
-                    val key = cells[0].replace("&nbsp;", " ").trim()
-                    val value = cells[1].replace("&nbsp;", " ").trim()
+                if (cells.size == 2) {
+                    val key = cells[0].trim()
+                    val value = cells[1].trim()
                     when {
                         key.contains("বাটা") -> bataKh = value.ifBlank { bataKh }
                         key.contains("খতিয়ান") -> khNo = value.ifBlank { khNo }
@@ -950,31 +958,82 @@ class BanglarbhumiClient(private val context: Context? = null) {
             )
             extractedTotalArea = area.replace("একর", "").replace("Acre", "").trim()
 
-            // Table 2 (Plots Table)
-            val detailsHtml = if (tableList.size > 1) tableList[1] else html
-            val detRowMatcher = Pattern.compile("(?i)<tr[^>]*>(.*?)</tr>", Pattern.DOTALL).matcher(detailsHtml)
-            while (detRowMatcher.find()) {
-                val row = detRowMatcher.group(1).orEmpty()
+            // 2. Parse All Plot Details Rows across ALL rows in the document
+            val seenPlotKeys = mutableSetOf<String>()
+            for (row in allRows) {
                 if (row.contains("<th", ignoreCase = true)) continue
                 val cells = extractCellsFromRow(row)
-                if (cells.size >= 4) {
-                    val dagNo = cells.getOrElse(0) { "" }
-                    if (dagNo.contains("দাগ") || dagNo.contains("নং") || dagNo.contains("খতিয়ান")) continue
+                if (cells.size >= 3) {
+                    val dagNo = cells.getOrElse(0) { "" }.trim()
+                    val hasDigits = dagNo.any { it.isDigit() }
+                    val isHeader = dagNo.contains("দাগ") || dagNo.contains("নং") || dagNo.contains("খতিয়ান") || dagNo.contains("জে")
+                    if (hasDigits && !isHeader) {
+                        val landClass = cells.getOrElse(1) { "বাস্তু" }.ifBlank { "বাস্তু" }
+                        val share = cells.getOrElse(2) { "1.0000" }.ifBlank { "1.0000" }
+                        val areaAcre = cells.getOrElse(3) { "0.0000" }.ifBlank { "0.0000" }
+                        val possessor = cells.getOrElse(4) { "Nil" }.ifBlank { "Nil" }
+                        val remarks = cells.getOrElse(5) { "Nil" }.ifBlank { "Nil" }
 
-                    owners.add(
-                        LandOwner(
-                            khatianOrPlotNo = dagNo,
-                            landClassification = cells.getOrElse(1) { "বাস্তু" },
-                            share = cells.getOrElse(2) { "1.0000" },
-                            areaAcre = cells.getOrElse(3) { "0.0000" },
-                            possessor = cells.getOrElse(4) { "Nil" },
-                            remarks = cells.getOrElse(5) { "Nil" },
-                            ownerName = owner.ifBlank { "খতিয়ান $searchNumber রায়ত" },
-                            guardianName = guardian,
-                            rayatType = rayatType,
-                            address = address
-                        )
-                    )
+                        val rowKey = "${dagNo}_${landClass}_${share}_$areaAcre"
+                        if (seenPlotKeys.add(rowKey)) {
+                            owners.add(
+                                LandOwner(
+                                    khatianOrPlotNo = dagNo,
+                                    landClassification = landClass,
+                                    share = share,
+                                    areaAcre = areaAcre,
+                                    possessor = possessor,
+                                    remarks = remarks,
+                                    ownerName = owner.ifBlank { "খতিয়ান $searchNumber রায়ত" },
+                                    guardianName = guardian,
+                                    rayatType = rayatType,
+                                    address = address
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Fallback: If owners count is still less than expected plot count, also check every sub-table in tableList
+            if (owners.isEmpty() || (plots.toIntOrNull() != null && owners.size < (plots.toIntOrNull() ?: 0))) {
+                for (t in tableList) {
+                    val tRowMatcher = Pattern.compile("(?i)<tr[^>]*>(.*?)</tr>", Pattern.DOTALL).matcher(t)
+                    while (tRowMatcher.find()) {
+                        val row = tRowMatcher.group(1).orEmpty()
+                        if (row.contains("<th", ignoreCase = true)) continue
+                        val cells = extractCellsFromRow(row)
+                        if (cells.size >= 3) {
+                            val dagNo = cells.getOrElse(0) { "" }.trim()
+                            val hasDigits = dagNo.any { it.isDigit() }
+                            val isHeader = dagNo.contains("দাগ") || dagNo.contains("নং") || dagNo.contains("খতিয়ান") || dagNo.contains("জে")
+                            if (hasDigits && !isHeader) {
+                                val landClass = cells.getOrElse(1) { "বাস্তু" }.ifBlank { "বাস্তু" }
+                                val share = cells.getOrElse(2) { "1.0000" }.ifBlank { "1.0000" }
+                                val areaAcre = cells.getOrElse(3) { "0.0000" }.ifBlank { "0.0000" }
+                                val possessor = cells.getOrElse(4) { "Nil" }.ifBlank { "Nil" }
+                                val remarks = cells.getOrElse(5) { "Nil" }.ifBlank { "Nil" }
+
+                                val rowKey = "${dagNo}_${landClass}_${share}_$areaAcre"
+                                if (seenPlotKeys.add(rowKey)) {
+                                    owners.add(
+                                        LandOwner(
+                                            khatianOrPlotNo = dagNo,
+                                            landClassification = landClass,
+                                            share = share,
+                                            areaAcre = areaAcre,
+                                            possessor = possessor,
+                                            remarks = remarks,
+                                            ownerName = owner.ifBlank { "খতিয়ান $searchNumber রায়ত" },
+                                            guardianName = guardian,
+                                            rayatType = rayatType,
+                                            address = address
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         } else {
@@ -985,18 +1044,14 @@ class BanglarbhumiClient(private val context: Context? = null) {
             var area = ""
             var bata = dagBata
 
-            // Table 1 (Plot Summary Table)
-            val summaryHtml = tableList.getOrNull(0) ?: ""
-            val rowMatcher = Pattern.compile("(?i)<tr[^>]*>(.*?)</tr>", Pattern.DOTALL).matcher(summaryHtml)
-            while (rowMatcher.find()) {
-                val row = rowMatcher.group(1).orEmpty()
+            for (row in allRows) {
                 val cells = extractCellsFromRow(row)
-                if (cells.size >= 2) {
-                    val key = cells[0].replace("&nbsp;", " ").trim()
-                    val value = cells[1].replace("&nbsp;", " ").trim()
+                if (cells.size == 2) {
+                    val key = cells[0].trim()
+                    val value = cells[1].trim()
                     when {
                         key.contains("বাটা") -> bata = value.ifBlank { bata }
-                        key.contains("দাগ নং") -> plotNo = value.ifBlank { plotNo }
+                        key.contains("দাগ নং") || (key.contains("দাগ") && !key.contains("ম্যাপ")) -> plotNo = value.ifBlank { plotNo }
                         key.contains("শ্রেণী") -> landClass = value
                         key.contains("মোট পরিমাণ") || key.contains("পরিমাণ") -> area = value
                     }
@@ -1011,29 +1066,80 @@ class BanglarbhumiClient(private val context: Context? = null) {
             )
             extractedTotalArea = area.replace("একর", "").replace("Acre", "").trim()
 
-            // Table 2 (Rayats Table)
-            val detailsHtml = if (tableList.size > 1) tableList[1] else html
-            val detRowMatcher = Pattern.compile("(?i)<tr[^>]*>(.*?)</tr>", Pattern.DOTALL).matcher(detailsHtml)
-            while (detRowMatcher.find()) {
-                val row = detRowMatcher.group(1).orEmpty()
+            // Rayats / Owners Table across ALL rows
+            val seenKhatianKeys = mutableSetOf<String>()
+            for (row in allRows) {
                 if (row.contains("<th", ignoreCase = true)) continue
                 val cells = extractCellsFromRow(row)
-                if (cells.size >= 4) {
-                    val khNo = cells.getOrElse(0) { "" }
-                    if (khNo.contains("খতিয়ান") || khNo.contains("নং") || khNo.contains("দাগ")) continue
+                if (cells.size >= 3) {
+                    val khNo = cells.getOrElse(0) { "" }.trim()
+                    val hasDigits = khNo.any { it.isDigit() }
+                    val isHeader = khNo.contains("খতিয়ান") || khNo.contains("নং") || khNo.contains("দাগ") || khNo.contains("জে")
+                    if (hasDigits && !isHeader) {
+                        val rayatName = cells.getOrElse(1) { "রায়তের নাম অনুপলব্ধ" }.ifBlank { "রায়তের নাম অনুপলব্ধ" }
+                        val guardian = cells.getOrElse(2) { "-" }.ifBlank { "-" }
+                        val share = cells.getOrElse(3) { "1.0000" }.ifBlank { "1.0000" }
+                        val areaAcre = cells.getOrElse(4) { "0.0000" }.ifBlank { "0.0000" }
+                        val possessor = cells.getOrElse(5) { "" }
+                        val remarks = cells.getOrElse(6) { cells.getOrElse(5) { "Nil" } }.ifBlank { "Nil" }
 
-                    owners.add(
-                        LandOwner(
-                            khatianOrPlotNo = khNo,
-                            ownerName = cells.getOrElse(1) { "রায়তের নাম অনুপলব্ধ" },
-                            guardianName = cells.getOrElse(2) { "-" },
-                            share = cells.getOrElse(3) { "1.0000" },
-                            areaAcre = cells.getOrElse(4) { "0.0000" },
-                            remarks = cells.getOrElse(5) { "Nil" },
-                            landClassification = landClass.ifBlank { "বাস্তু" },
-                            possessor = cells.getOrElse(5) { "" }
-                        )
-                    )
+                        val rowKey = "${khNo}_${rayatName}_${share}_$areaAcre"
+                        if (seenKhatianKeys.add(rowKey)) {
+                            owners.add(
+                                LandOwner(
+                                    khatianOrPlotNo = khNo,
+                                    ownerName = rayatName,
+                                    guardianName = guardian,
+                                    share = share,
+                                    areaAcre = areaAcre,
+                                    remarks = remarks,
+                                    landClassification = landClass.ifBlank { "বাস্তু" },
+                                    possessor = possessor
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Fallback for Plot Search across sub-tables in tableList
+            if (owners.isEmpty()) {
+                for (t in tableList) {
+                    val tRowMatcher = Pattern.compile("(?i)<tr[^>]*>(.*?)</tr>", Pattern.DOTALL).matcher(t)
+                    while (tRowMatcher.find()) {
+                        val row = tRowMatcher.group(1).orEmpty()
+                        if (row.contains("<th", ignoreCase = true)) continue
+                        val cells = extractCellsFromRow(row)
+                        if (cells.size >= 3) {
+                            val khNo = cells.getOrElse(0) { "" }.trim()
+                            val hasDigits = khNo.any { it.isDigit() }
+                            val isHeader = khNo.contains("খতিয়ান") || khNo.contains("নং") || khNo.contains("দাগ") || khNo.contains("জে")
+                            if (hasDigits && !isHeader) {
+                                val rayatName = cells.getOrElse(1) { "রায়তের নাম অনুপলব্ধ" }.ifBlank { "রায়তের নাম অনুপলব্ধ" }
+                                val guardian = cells.getOrElse(2) { "-" }.ifBlank { "-" }
+                                val share = cells.getOrElse(3) { "1.0000" }.ifBlank { "1.0000" }
+                                val areaAcre = cells.getOrElse(4) { "0.0000" }.ifBlank { "0.0000" }
+                                val possessor = cells.getOrElse(5) { "" }
+                                val remarks = cells.getOrElse(6) { cells.getOrElse(5) { "Nil" } }.ifBlank { "Nil" }
+
+                                val rowKey = "${khNo}_${rayatName}_${share}_$areaAcre"
+                                if (seenKhatianKeys.add(rowKey)) {
+                                    owners.add(
+                                        LandOwner(
+                                            khatianOrPlotNo = khNo,
+                                            ownerName = rayatName,
+                                            guardianName = guardian,
+                                            share = share,
+                                            areaAcre = areaAcre,
+                                            remarks = remarks,
+                                            landClassification = landClass.ifBlank { "বাস্তু" },
+                                            possessor = possessor
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1056,14 +1162,28 @@ class BanglarbhumiClient(private val context: Context? = null) {
     }
 
     private fun extractCellsFromRow(rowContent: String): List<String> {
-        val cellMatcher = Pattern.compile("(?i)<(?:td|th)[^>]*>(.*?)</(?:td|th)>", Pattern.DOTALL).matcher(rowContent)
         val cells = mutableListOf<String>()
+        val cellMatcher = Pattern.compile("(?i)<(?:td|th)[^>]*>(.*?)</(?:td|th)>", Pattern.DOTALL).matcher(rowContent)
         while (cellMatcher.find()) {
             val text = cellMatcher.group(1).orEmpty()
                 .replace(Regex("<[^>]*>"), "")
                 .replace("&nbsp;", " ")
+                .replace(Regex("\\s+"), " ")
                 .trim()
             cells.add(text)
+        }
+        if (cells.isNotEmpty()) return cells
+
+        // Fallback for unclosed <td> or <th> tags
+        val openMatcher = Pattern.compile("(?i)<(?:td|th)[^>]*>([^<]*)", Pattern.DOTALL).matcher(rowContent)
+        while (openMatcher.find()) {
+            val text = openMatcher.group(1).orEmpty()
+                .replace("&nbsp;", " ")
+                .replace(Regex("\\s+"), " ")
+                .trim()
+            if (text.isNotBlank()) {
+                cells.add(text)
+            }
         }
         return cells
     }
