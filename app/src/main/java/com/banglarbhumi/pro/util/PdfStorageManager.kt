@@ -35,12 +35,25 @@ data class SavedPdfItem(
     val sizeBytes: Long,
     val lastModified: Long
 ) {
+    fun getCleanMouza(isBengali: Boolean): String {
+        val noJl = mouzaName.replace(Regex("\\s*\\[\\d+]"), "").trim()
+        if (noJl.contains("(") && noJl.contains(")")) {
+            val enPart = noJl.substringBefore("(").trim()
+            val parenContent = noJl.substringAfter("(").substringBefore(")").trim()
+            val hasBengaliInParen = parenContent.any { it in '\u0980'..'\u09FF' }
+            return if (isBengali) {
+                if (hasBengaliInParen) parenContent else noJl
+            } else {
+                if (enPart.isNotBlank()) enPart else noJl
+            }
+        }
+        return noJl
+    }
+
     fun getDisplayTitle(isBengali: Boolean): String {
-        val cleanMouza = mouzaName
-            .replace(Regex("\\s*\\[\\d+]"), "")
-            .trim()
+        val cleanMouza = getCleanMouza(isBengali)
         val typeLabel = if (searchType == SearchType.PLOT) {
-            if (isBengali) "দাগ নং" else "Dag No."
+            if (isBengali) "দাগ নং" else "Plot No."
         } else {
             if (isBengali) "খতিয়ান নং" else "Khatian No."
         }
