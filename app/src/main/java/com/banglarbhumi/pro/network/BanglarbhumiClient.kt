@@ -1056,6 +1056,7 @@ class BanglarbhumiClient(private val context: Context? = null) {
             var area = ""
             var bata = dagBata
 
+            // 1. Scan for Plot Summary
             for (row in allRows) {
                 val cells = extractCellsFromRow(row)
                 if (cells.size == 2) {
@@ -1066,6 +1067,17 @@ class BanglarbhumiClient(private val context: Context? = null) {
                         key.contains("দাগ নং") || (key.contains("দাগ") && !key.contains("ম্যাপ")) -> plotNo = value.ifBlank { plotNo }
                         key.contains("শ্রেণী") -> landClass = value
                         key.contains("মোট পরিমাণ") || key.contains("পরিমাণ") -> area = value
+                    }
+                } else if (cells.size >= 3) {
+                    val isSummaryRow = cells.any { it.contains("ম্যাপ") || it.contains("Click", ignoreCase = true) }
+                    val isHeader = cells.any { it.contains("দাগ নং") || it.contains("শ্রেণী") || it.contains("জমির মোট পরিমাণ") }
+                    if (!isHeader && (isSummaryRow || cells.size == 4)) {
+                        val candidatePlot = cells.getOrElse(0) { "" }.trim()
+                        if (candidatePlot.any { it.isDigit() } && (candidatePlot == dagMain || plotNo == dagMain)) {
+                            plotNo = candidatePlot
+                            landClass = cells.getOrElse(1) { landClass }.trim()
+                            area = cells.getOrElse(2) { area }.trim()
+                        }
                     }
                 }
             }
@@ -1078,7 +1090,7 @@ class BanglarbhumiClient(private val context: Context? = null) {
             )
             extractedTotalArea = area.replace("একর", "").replace("Acre", "").trim()
 
-            // Rayats / Owners Table across ALL rows
+            // 2. Rayats / Owners Table across ALL rows
             val seenKhatianKeys = mutableSetOf<String>()
             for (row in allRows) {
                 if (row.contains("<th", ignoreCase = true)) continue
@@ -1087,7 +1099,9 @@ class BanglarbhumiClient(private val context: Context? = null) {
                     val khNo = cells.getOrElse(0) { "" }.trim()
                     val hasDigits = khNo.any { it.isDigit() }
                     val isHeader = khNo.contains("খতিয়ান") || khNo.contains("নং") || khNo.contains("দাগ") || khNo.contains("জে")
-                    if (hasDigits && !isHeader) {
+                    val isSummaryRow = cells.any { it.contains("Click Here", ignoreCase = true) || it.contains("ম্যাপ") } ||
+                            (cells.size == 4 && (khNo == plotNo || khNo == dagMain))
+                    if (hasDigits && !isHeader && !isSummaryRow) {
                         val rayatName = cells.getOrElse(1) { "রায়তের নাম অনুপলব্ধ" }.ifBlank { "রায়তের নাম অনুপলব্ধ" }
                         val guardian = cells.getOrElse(2) { "-" }.ifBlank { "-" }
                         val share = cells.getOrElse(3) { "1.0000" }.ifBlank { "1.0000" }
@@ -1105,7 +1119,7 @@ class BanglarbhumiClient(private val context: Context? = null) {
                                     share = share,
                                     areaAcre = areaAcre,
                                     remarks = remarks,
-                                    landClassification = landClass.ifBlank { "বাস্তু" },
+                                    landClassification = landClass.ifBlank { "শালি" },
                                     possessor = possessor
                                 )
                             )
@@ -1126,7 +1140,9 @@ class BanglarbhumiClient(private val context: Context? = null) {
                             val khNo = cells.getOrElse(0) { "" }.trim()
                             val hasDigits = khNo.any { it.isDigit() }
                             val isHeader = khNo.contains("খতিয়ান") || khNo.contains("নং") || khNo.contains("দাগ") || khNo.contains("জে")
-                            if (hasDigits && !isHeader) {
+                            val isSummaryRow = cells.any { it.contains("Click Here", ignoreCase = true) || it.contains("ম্যাপ") } ||
+                                    (cells.size == 4 && (khNo == plotNo || khNo == dagMain))
+                            if (hasDigits && !isHeader && !isSummaryRow) {
                                 val rayatName = cells.getOrElse(1) { "রায়তের নাম অনুপলব্ধ" }.ifBlank { "রায়তের নাম অনুপলব্ধ" }
                                 val guardian = cells.getOrElse(2) { "-" }.ifBlank { "-" }
                                 val share = cells.getOrElse(3) { "1.0000" }.ifBlank { "1.0000" }
@@ -1144,7 +1160,7 @@ class BanglarbhumiClient(private val context: Context? = null) {
                                             share = share,
                                             areaAcre = areaAcre,
                                             remarks = remarks,
-                                            landClassification = landClass.ifBlank { "বাস্তু" },
+                                            landClassification = landClass.ifBlank { "শালি" },
                                             possessor = possessor
                                         )
                                     )
@@ -1220,8 +1236,11 @@ class BanglarbhumiClient(private val context: Context? = null) {
         searchNumber: String
     ): String {
         val isPlot = searchType == SearchType.PLOT
-        // Use clean responsive table markup whenever records are parsed, avoiding portal desktop 2-column outer tables
-        val tableContent = if (parsedData.owners.isNotEmpty() || parsedData.khatianSummary != null || parsedData.plotSummary != null) {
+        // For Plot search: use cleaned portal HTML to maintain the authentic 4-col summary + purple note + 7-col rayats table
+        // For Khatian search: use generateCleanTableMarkup for 100% full-screen responsive table layout
+        val tableContent = if (isPlot && extractedHtml.contains("<table", ignoreCase = true)) {
+            cleanPortalHtml(extractedHtml)
+        } else if (!isPlot && (parsedData.owners.isNotEmpty() || parsedData.khatianSummary != null)) {
             generateCleanTableMarkup(parsedData, searchType, searchNumber)
         } else if (extractedHtml.contains("<table", ignoreCase = true)) {
             cleanPortalHtml(extractedHtml)
@@ -1265,6 +1284,43 @@ class BanglarbhumiClient(private val context: Context? = null) {
                         font-size: 14px;
                         margin-bottom: 12px;
                     }
+                    table, .plots-table, .rayats-table {
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        border-collapse: collapse !important;
+                        margin-top: 6px;
+                        margin-bottom: 14px;
+                        font-size: 12.5px !important;
+                        background-color: #FFFFFF;
+                        border: 1px solid #C0C0C0 !important;
+                        table-layout: auto !important;
+                    }
+                    th, .plots-table th, .rayats-table th {
+                        background-color: #D5E8D4 !important;
+                        color: #000000 !important;
+                        font-weight: bold !important;
+                        padding: 7px 4px !important;
+                        border: 1px solid #B0B0B0 !important;
+                        text-align: center !important;
+                        font-size: 12.5px !important;
+                        white-space: normal !important;
+                        line-height: 1.25 !important;
+                    }
+                    td, .plots-table td, .rayats-table td {
+                        padding: 6px 4px !important;
+                        border: 1px solid #C0C0C0 !important;
+                        color: #000000 !important;
+                        font-size: 12px !important;
+                        vertical-align: middle !important;
+                        word-break: break-word !important;
+                        text-align: center !important;
+                    }
+                    tr:nth-child(even) td, .plots-table tbody tr:nth-child(even) td, .rayats-table tbody tr:nth-child(even) td {
+                        background-color: #F2F2F2 !important;
+                    }
+                    tr:nth-child(odd) td, .plots-table tbody tr:nth-child(odd) td, .rayats-table tbody tr:nth-child(odd) td {
+                        background-color: #FFFFFF !important;
+                    }
                     .summary-table {
                         width: 100% !important;
                         max-width: 100% !important;
@@ -1285,10 +1341,12 @@ class BanglarbhumiClient(private val context: Context? = null) {
                     .summary-table td:first-child {
                         font-weight: 500 !important;
                         width: 46% !important;
+                        text-align: left !important;
                     }
                     .summary-table td:last-child {
                         font-weight: normal !important;
                         width: 54% !important;
+                        text-align: left !important;
                     }
                     .summary-table tr:nth-child(even) td {
                         background-color: #EAEAEA !important;
@@ -1303,56 +1361,24 @@ class BanglarbhumiClient(private val context: Context? = null) {
                         margin-top: 14px;
                         margin-bottom: 3px;
                     }
-                    .section-subtitle, font[color='purple'], font[color='#800080'] {
+                    .section-subtitle, font[color='purple'], font[color='#800080'], .purple-text {
                         font-size: 11.5px !important;
                         color: #800080 !important;
-                        margin-bottom: 10px !important;
+                        margin-top: 8px !important;
+                        margin-bottom: 8px !important;
                         font-style: italic !important;
                         line-height: 1.35 !important;
-                        display: block !important;
                     }
-                    .plots-table, .rayats-table {
-                        width: 100% !important;
-                        max-width: 100% !important;
-                        border-collapse: collapse !important;
-                        margin-top: 6px;
-                        margin-bottom: 16px;
-                        font-size: 12.5px !important;
-                        background-color: #FFFFFF;
-                        border: 1px solid #C0C0C0 !important;
-                        table-layout: fixed !important;
+                    div:has(> font[color='purple']), center:has(> font[color='purple']) {
+                        margin-top: 10px !important;
+                        margin-bottom: 10px !important;
                     }
-                    .plots-table th, .rayats-table th {
-                        background-color: #D5E8D4 !important;
-                        color: #000000 !important;
-                        font-weight: bold !important;
-                        padding: 8px 3px !important;
-                        border: 1px solid #B0B0B0 !important;
-                        text-align: center !important;
-                        font-size: 13px !important;
-                        white-space: normal !important;
-                        line-height: 1.25 !important;
-                    }
-                    .plots-table td, .rayats-table td {
-                        padding: 7px 3px !important;
-                        border: 1px solid #C0C0C0 !important;
-                        color: #000000 !important;
-                        font-size: 12.5px !important;
-                        vertical-align: middle !important;
-                        word-break: break-word !important;
-                    }
-                    .plots-table tbody tr:nth-child(odd) td, .rayats-table tbody tr:nth-child(odd) td {
-                        background-color: #EAEAEA !important;
-                    }
-                    .plots-table tbody tr:nth-child(even) td, .rayats-table tbody tr:nth-child(even) td {
-                        background-color: #FFFFFF !important;
-                    }
-                    .blue-link {
+                    a, .blue-link, .link {
                         color: #0000EE !important;
                         font-weight: bold !important;
                         text-decoration: underline !important;
                     }
-                    .red-text {
+                    font[color='red'], .red-text {
                         color: #D32F2F !important;
                         font-weight: bold !important;
                     }
@@ -1382,9 +1408,8 @@ class BanglarbhumiClient(private val context: Context? = null) {
         val fromTable = if (firstTableIdx >= 0) rawHtml.substring(firstTableIdx) else rawHtml
 
         return fromTable
-            .replace(Regex("(?i)<(?:h[1-6]|div|p|center|font|span|b|td)[^>]*>\\s*\\(?\\s*Live\\s*Data\\s*As\\s*On.*?</(?:h[1-6]|div|p|center|font|span|b|td)>"), "")
-            .replace(Regex("(?i)<(?:h[1-6]|div|p|center|font|span|b|td)[^>]*>\\s*জে\\.?\\s*এল.*?</(?:h[1-6]|div|p|center|font|span|b|td)>"), "")
-            .replace(Regex("(?i)<td[^>]*>(?:\\s*|&nbsp;|<br/?>)*</td>"), "")
+            .replace(Regex("(?i)<(?:h[1-6]|div|p|center)[^>]*>\\s*Live\\s*Data\\s*As\\s*On.*?</(?:h[1-6]|div|p|center)>"), "")
+            .replace(Regex("(?i)<(?:h[1-6]|div|p|center|span|font|b)[^>]*>\\s*জে\\.?\\s*এল.*?</(?:h[1-6]|div|p|center|span|font|b)>"), "")
             .replace(Regex("(?i)<center[^>]*>"), "<div>")
             .replace(Regex("(?i)</center>"), "</div>")
             .replace(Regex("(?i)\\s*align=[\"']center[\"']"), "")
@@ -1472,7 +1497,7 @@ class BanglarbhumiClient(private val context: Context? = null) {
         } else {
             val ps = parsedData.plotSummary
             val firstOwner = parsedData.owners.firstOrNull()
-            val landClassDisplay = ps?.landClassification?.ifBlank { firstOwner?.landClassification?.ifBlank { "-" } ?: "-" } ?: (firstOwner?.landClassification?.ifBlank { "-" } ?: "-")
+            val landClassDisplay = ps?.landClassification?.ifBlank { firstOwner?.landClassification?.ifBlank { "শালি" } ?: "শালি" } ?: (firstOwner?.landClassification?.ifBlank { "শালি" } ?: "শালি")
             val areaDisplay = ps?.totalAreaAcre?.ifBlank { parsedData.totalAreaAcre } ?: parsedData.totalAreaAcre
             val (dag1, dag2) = splitSearchNumber(searchNumber)
             val displayPlot = ps?.plotNo?.ifBlank { dag1 } ?: dag1
@@ -1485,40 +1510,65 @@ class BanglarbhumiClient(private val context: Context? = null) {
             val cleanArea = areaDisplay.replace("একর", "").replace("Acre", "").trim()
 
             sb.append("""
-                <table class="summary-table">
-                    <tr><td>দাগ নং  :</td><td>$displayPlotFull</td></tr>
-                    <tr><td>জমির শ্রেণী :</td><td>$landClassDisplay</td></tr>
-                    <tr><td>মোট পরিমাণ:</td><td>$cleanArea একর</td></tr>
+                <table class="plots-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 22%;">দাগ নং</th>
+                            <th style="width: 22%;">শ্রেণী</th>
+                            <th style="width: 34%;">জমির মোট পরিমাণ(একর)</th>
+                            <th style="width: 22%;">দাগের ম্যাপ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td align="center">$displayPlotFull</td>
+                            <td align="center">$landClassDisplay</td>
+                            <td align="center">$cleanArea</td>
+                            <td align="center"><a href="javascript:void(0)" class="blue-link">Click Here</a></td>
+                        </tr>
+                    </tbody>
                 </table>
-                <div class="section-title">দাগের অত্রস্বত্বের রায়তের বিবরণ:</div>
-                <div class="section-subtitle">(* রায়তের অংশ অনুযায়ী দাগের জমির যথার্থ পরিমাণ নির্ধারিত হইবে। )</div>
+                <div class="section-subtitle" style="text-align: center; margin: 10px 0;">(উল্লিখিত খতিয়ানের যথার্থ অংশ পরিমাণ, , ঐ খতিয়ানে উক্ত দাগে অংশ অনুসারে নির্ধারিত হইবে।)</div>
                 <table class="rayats-table">
                     <thead>
                         <tr>
-                            <th style="width: 14%;">খতিয়ান নং</th>
-                            <th style="width: 22%;">রায়তের নাম</th>
-                            <th style="width: 22%;">পিতা/স্বামীর নাম</th>
-                            <th style="width: 14%;">অংশ</th>
-                            <th style="width: 16%;">অংশ পরিমাণ(একর)</th>
-                            <th style="width: 12%;">মন্তব্য</th>
+                            <th style="width: 13%;">খতিয়ান নং</th>
+                            <th style="width: 22%;">দখলকারের নাম</th>
+                            <th style="width: 17%;">পিতা/স্বামী</th>
+                            <th style="width: 12%;">অংশ</th>
+                            <th style="width: 18%;">অংশ পরিমাণ(একর) ( শ্রেণী )</th>
+                            <th style="width: 9%;">দখলদার</th>
+                            <th style="width: 9%;">মন্তব্য</th>
                         </tr>
                     </thead>
                     <tbody>
             """.trimIndent())
             for (o in parsedData.owners) {
+                val possessorHtml = if (o.possessor.contains("বর্গা") || o.possessor.contains("অনুমতি")) {
+                    "<span class='blue-link'>${o.possessor}</span>"
+                } else {
+                    o.possessor.ifBlank { "Nil" }
+                }
                 val remarksText = o.remarks.ifBlank { "Nil" }
                 val remarksHtml = if (remarksText.contains("Nil", ignoreCase = true)) {
                     "<span class='red-text'>$remarksText</span>"
                 } else {
                     remarksText
                 }
+                val areaWithClass = if (o.areaAcre.contains("(") || o.landClassification.isBlank()) {
+                    o.areaAcre
+                } else {
+                    "${o.areaAcre} (${o.landClassification})"
+                }
+                val rayatTypeHtml = if (o.rayatType.isNotBlank()) "<br><font color='purple'>${o.rayatType}</font>" else "<br><font color='purple'>ব্যক্তি</font>"
                 sb.append("""
                     <tr>
                         <td align="center">${o.khatianOrPlotNo}</td>
-                        <td align="left">${o.ownerName}</td>
-                        <td align="left">${o.guardianName}</td>
+                        <td align="center">${o.ownerName}$rayatTypeHtml</td>
+                        <td align="center">${o.guardianName}</td>
                         <td align="center">${o.share}</td>
-                        <td align="center">${o.areaAcre}</td>
+                        <td align="center">$areaWithClass</td>
+                        <td align="center">$possessorHtml</td>
                         <td align="center">$remarksHtml</td>
                     </tr>
                 """.trimIndent())
