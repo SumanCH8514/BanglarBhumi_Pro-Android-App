@@ -383,7 +383,7 @@ fun AccountScreen(
                     // Item 1: Cached Portal Credentials
                     AccountListItem(
                         icon = Icons.Default.VpnKey,
-                        title = if (isBengali) "পোর্টাল ক্রেডেনশিয়ালস ক্যাশে" else "Portal Credentials Cache",
+                        title = if (isBengali) "পোর্টাল ক্রেডেনশিয়ালস:" else "Portal Credentials Cache",
                         subtitle = if (cachedUsername.isNotBlank()) {
                             val namePrefix = if (citizenName.isNotBlank()) "$citizenName • " else ""
                             if (isBengali) "স্বয়ংক্রিয় লগইন সংরক্ষিত: ${namePrefix}আইডি: $cachedUsername"
@@ -505,7 +505,7 @@ fun AccountScreen(
                     // Item 1: Language Preference
                     AccountListItem(
                         icon = Icons.Default.Language,
-                        title = if (isBengali) "অ্যাপের ভাষা (Language)" else "App Language",
+                        title = if (isBengali) "অ্যাপের ভাষা:" else "App Language",
                         subtitle = if (isBengali) "বর্তমান ভাষা: বাংলা" else "Current Language: English",
                         trailing = {
                             Surface(

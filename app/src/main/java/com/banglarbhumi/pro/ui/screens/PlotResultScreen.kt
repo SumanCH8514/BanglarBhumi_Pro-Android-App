@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -98,18 +99,20 @@ fun PlotResultScreen(
                             .padding(start = 12.dp, end = 4.dp)
                     ) {
                         Text(
-                            text = "${result.districtName} > ${result.blockName}",
+                            text = formatLocationHierarchy(result.districtName, result.blockName, result.mouzaName, isBengali),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = Slate500,
-                            maxLines = 1
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "দাগ: ${result.searchNumber} • ${result.mouzaName}",
+                            text = if (isBengali) "দাগ: ${result.searchNumber}" else "Plot: ${result.searchNumber}",
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = Emerald900,
-                            maxLines = 1
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -236,4 +239,16 @@ fun PlotResultScreen(
             }
         }
     }
+}
+
+internal fun formatLocationHierarchy(district: String, block: String, mouza: String, isBengali: Boolean): String {
+    fun clean(raw: String): String {
+        return if (isBengali) {
+            val bn = Regex("""\(([^)]+)\)""").find(raw)?.groupValues?.get(1)?.trim()
+            if (!bn.isNullOrBlank()) bn else raw.substringBefore("[").substringBefore("(").trim()
+        } else {
+            raw.substringBefore("[").substringBefore("(").trim().uppercase()
+        }
+    }
+    return "${clean(district)} > ${clean(block)} > ${clean(mouza)}"
 }

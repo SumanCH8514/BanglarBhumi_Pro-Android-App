@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -99,18 +100,20 @@ fun KhatianResultScreen(
                             .padding(start = 12.dp, end = 4.dp)
                     ) {
                         Text(
-                            text = "${result.districtName} > ${result.blockName}",
+                            text = formatLocationHierarchy(result.districtName, result.blockName, result.mouzaName, isBengali),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = Slate500,
-                            maxLines = 1
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "খতিয়ান: ${result.searchNumber} • ${result.mouzaName}",
+                            text = if (isBengali) "খতিয়ান: ${result.searchNumber}" else "Khatian: ${result.searchNumber}",
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = Emerald900,
-                            maxLines = 1
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
