@@ -602,7 +602,7 @@ fun AccountScreen(
                 Column(modifier = Modifier.fillMaxWidth()) {
                     AccountListItem(
                         icon = Icons.Default.NewReleases,
-                        title = if (isBengali) "ভার্সন v1.1.0 রিলিজ নোটস ও আপডেট" else "Version v1.1.0 Release Notes & Updates",
+                        title = if (isBengali) "ভার্সন v1.1.0 আপডেট" else "Application Changelog",
                         subtitle = if (isBengali) "নতুন ফিচার, PDF অপটিমাইজেশন ও বাগ ফিক্স" else "New features, PDF optimizations & bug fixes",
                         trailing = {
                             Surface(
