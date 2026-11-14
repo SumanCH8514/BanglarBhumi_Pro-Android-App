@@ -4,21 +4,21 @@ import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,26 +28,22 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.banglarbhumi.pro.data.model.SavedLandRecord
 import com.banglarbhumi.pro.data.model.SearchType
 import com.banglarbhumi.pro.ui.theme.*
 import com.banglarbhumi.pro.ui.viewmodel.MainViewModel
 import com.banglarbhumi.pro.util.PdfStorageManager
 import com.banglarbhumi.pro.util.SavedPdfItem
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SavedRecordsScreen(
     viewModel: MainViewModel,
-    onViewRecord: () -> Unit
+    @Suppress("UNUSED_PARAMETER") onViewRecord: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val isBengali by viewModel.isBengali.collectAsState()
-    val savedRecords by viewModel.savedRecords.collectAsState()
     val savedPdfs by viewModel.savedPdfs.collectAsState()
+    val starredPdfs = remember(savedPdfs) { savedPdfs.filter { it.isStarred } }
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
@@ -96,7 +92,7 @@ fun SavedRecordsScreen(
                                     text = if (isBengali)
                                         "ডাউনলোড করা PDF ফাইল ও সংরক্ষিত রেকর্ড"
                                     else
-                                        "Downloaded PDF files and saved offline records",
+                                        "Downloaded PDF files and saved offline.",
                                     fontSize = 12.sp,
                                     color = Slate500
                                 )
@@ -160,7 +156,7 @@ fun SavedRecordsScreen(
                                 onClick = { selectedTabIndex = 1 },
                                 text = {
                                     Text(
-                                        text = if (isBengali) "বুকমার্ক (${savedRecords.size})" else "Bookmarks (${savedRecords.size})",
+                                        text = if (isBengali) "স্টার (${starredPdfs.size})" else "Starred (${starredPdfs.size})",
                                         fontWeight = if (selectedTabIndex == 1) FontWeight.Bold else FontWeight.Medium,
                                         fontSize = 13.5.sp
                                     )
@@ -244,6 +240,17 @@ fun SavedRecordsScreen(
                         SavedPdfListItem(
                             item = item,
                             isBengali = isBengali,
+                            onToggleStar = {
+                                viewModel.toggleStarPdf(item)
+                                Toast.makeText(
+                                    context,
+                                    if (!item.isStarred)
+                                        (if (isBengali) "স্টার তালিকায় যুক্ত করা হয়েছে" else "Added to Starred")
+                                    else
+                                        (if (isBengali) "স্টার তালিকা থেকে সরানো হয়েছে" else "Removed from Starred"),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            },
                             onView = {
                                 PdfStorageManager.viewPdf(context, item)
                             },
@@ -262,9 +269,9 @@ fun SavedRecordsScreen(
                     }
                 }
             } else {
-                // BOOKMARKS LIST
-                if (savedRecords.isEmpty()) {
-                    item(key = "empty_bookmarks") {
+                // STARRED PDF LIST
+                if (starredPdfs.isEmpty()) {
+                    item(key = "empty_starred") {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
@@ -280,22 +287,22 @@ fun SavedRecordsScreen(
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Bookmark,
+                                    imageVector = Icons.Filled.Star,
                                     contentDescription = null,
-                                    tint = Slate300,
+                                    tint = Color(0xFFF59E0B),
                                     modifier = Modifier.size(56.dp)
                                 )
                                 Text(
-                                    text = if (isBengali) "কোনো রেকর্ড সংরক্ষিত নেই" else "No saved records found",
+                                    text = if (isBengali) "কোনো স্টার করা PDF নেই" else "No Starred PDFs Found",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Slate700
+                                    color = Slate800
                                 )
                                 Text(
                                     text = if (isBengali)
-                                        "যেকোনো দাগ বা খতিয়ানের বিবরণী অনুসন্ধান করার পর বুকমার্ক বাটনে ক্লিক করে এখানে সংরক্ষণ করতে পারেন।"
+                                        "যেকোনো ডাউনলোড করা PDF-এর পাশে থাকা স্টার (★) আইকনে ক্লিক করে এখানে যুক্ত করতে পারেন যাতে দ্রুত খুঁজে পাওয়া যায়।"
                                     else
-                                        "Search any Plot or Khatian record and tap the bookmark icon to save it here for quick offline access.",
+                                        "Tap the star (★) icon next to any downloaded PDF to add it here for quick offline access.",
                                     fontSize = 13.sp,
                                     color = Slate500,
                                     lineHeight = 18.sp
@@ -304,16 +311,34 @@ fun SavedRecordsScreen(
                         }
                     }
                 } else {
-                    items(savedRecords, key = { it.id }) { item ->
-                        SavedRecordItem(
-                            saved = item,
+                    items(starredPdfs, key = { "starred_${it.fileName}" }) { item ->
+                        SavedPdfListItem(
+                            item = item,
                             isBengali = isBengali,
+                            onToggleStar = {
+                                viewModel.toggleStarPdf(item)
+                                Toast.makeText(
+                                    context,
+                                    if (!item.isStarred)
+                                        (if (isBengali) "স্টার তালিকায় যুক্ত করা হয়েছে" else "Added to Starred")
+                                    else
+                                        (if (isBengali) "স্টার তালিকা থেকে সরানো হয়েছে" else "Removed from Starred"),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            },
                             onView = {
-                                viewModel.showRecord(item.record)
-                                onViewRecord()
+                                PdfStorageManager.viewPdf(context, item)
+                            },
+                            onShare = {
+                                PdfStorageManager.sharePdf(context, item)
                             },
                             onDelete = {
-                                viewModel.deleteSavedRecord(item.id)
+                                viewModel.deleteSavedPdf(item)
+                                Toast.makeText(
+                                    context,
+                                    if (isBengali) "ফাইলটি মুছে ফেলা হয়েছে" else "PDF deleted",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         )
                     }
@@ -327,6 +352,7 @@ fun SavedRecordsScreen(
 private fun SavedPdfListItem(
     item: SavedPdfItem,
     isBengali: Boolean,
+    onToggleStar: () -> Unit,
     onView: () -> Unit,
     onShare: () -> Unit,
     onDelete: () -> Unit
@@ -344,7 +370,7 @@ private fun SavedPdfListItem(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Top Row: Refined Type Badge on left + Circular Delete Button on right
+            // Top Row: Refined Type Badge on left + Star & Delete Buttons on right
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -380,20 +406,44 @@ private fun SavedPdfListItem(
                     }
                 }
 
-                // Delete Button: Soft circular container with ripple
-                Surface(
-                    onClick = onDelete,
-                    shape = RoundedCornerShape(50),
-                    color = Color(0xFFFEE2E2),
-                    modifier = Modifier.size(32.dp)
+                // Right Action Buttons: Star beside Delete
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.DeleteOutline,
-                            contentDescription = "Delete",
-                            tint = Color(0xFFDC2626),
-                            modifier = Modifier.size(17.dp)
-                        )
+                    // Star Button
+                    Surface(
+                        onClick = onToggleStar,
+                        shape = RoundedCornerShape(50),
+                        color = if (item.isStarred) Color(0xFFFEF3C7) else Color(0xFFF8FAFC),
+                        border = BorderStroke(1.dp, if (item.isStarred) Color(0xFFFCD34D) else Color(0xFFE2E8F0)),
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = if (item.isStarred) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                                contentDescription = if (item.isStarred) "Starred" else "Not Starred",
+                                tint = if (item.isStarred) Color(0xFFD97706) else Color(0xFF94A3B8),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    // Delete Button: Soft circular container with ripple
+                    Surface(
+                        onClick = onDelete,
+                        shape = RoundedCornerShape(50),
+                        color = Color(0xFFFEE2E2),
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.DeleteOutline,
+                                contentDescription = "Delete",
+                                tint = Color(0xFFDC2626),
+                                modifier = Modifier.size(17.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -523,99 +573,6 @@ private fun SavedPdfListItem(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SavedRecordItem(
-    saved: SavedLandRecord,
-    isBengali: Boolean,
-    onView: () -> Unit,
-    onDelete: () -> Unit
-) {
-    val record = saved.record
-    val dateFormat = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
-    val dateString = dateFormat.format(Date(saved.savedTimestamp))
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onView() },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    color = if (record.searchType == SearchType.PLOT) Emerald100 else GoldLight,
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = if (record.searchType == SearchType.PLOT)
-                            (if (isBengali) "দাগ নম্বর: ${record.searchNumber}" else "Plot: ${record.searchNumber}")
-                        else
-                            (if (isBengali) "খতিয়ান: ${record.searchNumber}" else "Khatian: ${record.searchNumber}"),
-                        color = if (record.searchType == SearchType.PLOT) Emerald800 else GoldAccent,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        Icons.Default.DeleteOutline,
-                        contentDescription = "Delete",
-                        tint = Color(0xFFEF4444)
-                    )
-                }
-            }
-
-            Text(
-                text = "${record.districtName} > ${record.blockName}",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Slate800
-            )
-
-            Text(
-                text = "মৌজা: ${record.mouzaName}",
-                fontSize = 12.sp,
-                color = Slate600
-            )
-
-            HorizontalDivider(color = Slate200, thickness = 0.5.dp)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "${record.owners.size} জন অংশীদার • ${record.totalAreaAcre} একর",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Emerald800
-                )
-
-                Text(
-                    text = dateString,
-                    fontSize = 11.sp,
-                    color = Slate400
-                )
             }
         }
     }

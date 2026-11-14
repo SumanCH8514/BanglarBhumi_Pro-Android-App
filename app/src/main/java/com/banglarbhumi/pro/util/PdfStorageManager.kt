@@ -33,7 +33,8 @@ data class SavedPdfItem(
     val districtName: String,
     val blockName: String,
     val sizeBytes: Long,
-    val lastModified: Long
+    val lastModified: Long,
+    val isStarred: Boolean = false
 ) {
     fun getCleanMouza(isBengali: Boolean): String {
         val noJl = mouzaName.replace(Regex("\\s*\\[\\d+]"), "").trim()
@@ -84,6 +85,7 @@ object PdfStorageManager {
 
     private const val FOLDER_RELATIVE_PATH = "SumanOnline Web Services/BanglarBhoomi Pro"
     private const val PREFS_NAME = "banglarbhumi_saved_pdfs_meta"
+    private const val PREFS_STARRED_KEY = "starred_pdf_filenames"
 
     fun getTargetDirectory(): File {
         val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
@@ -216,6 +218,22 @@ object PdfStorageManager {
         } catch (_: Exception) {}
     }
 
+    fun toggleStarPdf(context: Context, fileName: String): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val oldSet = prefs.getStringSet(PREFS_STARRED_KEY, emptySet()) ?: emptySet()
+        val newSet = HashSet(oldSet)
+        val isNowStarred: Boolean
+        if (newSet.contains(fileName)) {
+            newSet.remove(fileName)
+            isNowStarred = false
+        } else {
+            newSet.add(fileName)
+            isNowStarred = true
+        }
+        prefs.edit().putStringSet(PREFS_STARRED_KEY, newSet).commit()
+        return isNowStarred
+    }
+
     fun getSavedPdfs(context: Context): List<SavedPdfItem> {
         val targetDir = getTargetDirectory()
         val files = targetDir.listFiles { file ->
@@ -223,8 +241,10 @@ object PdfStorageManager {
         } ?: emptyArray()
 
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val starredSet = prefs.getStringSet(PREFS_STARRED_KEY, emptySet()) ?: emptySet()
 
         return files.map { file ->
+            val isStarred = starredSet.contains(file.name)
             val metaJsonStr = prefs.getString(file.name, null)
             if (!metaJsonStr.isNullOrBlank()) {
                 try {
@@ -240,18 +260,19 @@ object PdfStorageManager {
                         districtName = json.optString("districtName", ""),
                         blockName = json.optString("blockName", ""),
                         sizeBytes = file.length(),
-                        lastModified = file.lastModified()
+                        lastModified = file.lastModified(),
+                        isStarred = isStarred
                     )
                 } catch (_: Exception) {
-                    parseFromFileName(file)
+                    parseFromFileName(file, isStarred)
                 }
             } else {
-                parseFromFileName(file)
+                parseFromFileName(file, isStarred)
             }
         }.sortedByDescending { it.lastModified }
     }
 
-    private fun parseFromFileName(file: File): SavedPdfItem {
+    private fun parseFromFileName(file: File, isStarred: Boolean = false): SavedPdfItem {
         // Example: Karakbere_Dag_314.pdf or Karakbere_Khatian_59-1.pdf
         val baseName = file.nameWithoutExtension
         val parts = baseName.split("_")
@@ -280,7 +301,8 @@ object PdfStorageManager {
             districtName = "",
             blockName = "",
             sizeBytes = file.length(),
-            lastModified = file.lastModified()
+            lastModified = file.lastModified(),
+            isStarred = isStarred
         )
     }
 
@@ -288,7 +310,15 @@ object PdfStorageManager {
         return try {
             val deleted = item.file.delete()
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().remove(item.fileName).apply()
+            val edit = prefs.edit()
+            edit.remove(item.fileName)
+            val starredSet = prefs.getStringSet(PREFS_STARRED_KEY, emptySet())
+            if (!starredSet.isNullOrEmpty() && starredSet.contains(item.fileName)) {
+                val newStarredSet = HashSet(starredSet)
+                newStarredSet.remove(item.fileName)
+                edit.putStringSet(PREFS_STARRED_KEY, newStarredSet)
+            }
+            edit.commit()
             MediaScannerConnection.scanFile(
                 context,
                 arrayOf(item.file.absolutePath),

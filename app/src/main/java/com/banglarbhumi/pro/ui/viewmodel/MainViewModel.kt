@@ -520,6 +520,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun toggleStarPdf(item: SavedPdfItem) {
+        viewModelScope.launch(Dispatchers.IO) {
+            PdfStorageManager.toggleStarPdf(getApplication(), item.fileName)
+            loadSavedPdfs()
+        }
+    }
+
     private fun checkIfSaved(record: LandRecordResult?) {
         if (record == null) {
             _isSaved.value = false
