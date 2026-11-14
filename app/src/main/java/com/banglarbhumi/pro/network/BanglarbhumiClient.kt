@@ -909,11 +909,16 @@ class BanglarbhumiClient(private val context: Context? = null) {
             .replace(Regex("(?is)<script[^>]*>.*?</script>"), "")
             .replace(Regex("(?is)<style[^>]*>.*?</style>"), "")
 
-        // Gather all <tr> elements across the document
-        val allRowMatcher = Pattern.compile("(?i)<tr[^>]*>(.*?)</tr>", Pattern.DOTALL).matcher(cleanHtml)
+        // Gather all <tr> elements by splitting on <tr tag (reliably handles unclosed <tr> tags from portal JSP)
+        val rawRowSplits = cleanHtml.split(Regex("(?i)<tr[^>]*>"))
         val allRows = mutableListOf<String>()
-        while (allRowMatcher.find()) {
-            allRows.add(allRowMatcher.group(1).orEmpty())
+        if (rawRowSplits.size > 1) {
+            for (i in 1 until rawRowSplits.size) {
+                val chunk = rawRowSplits[i].substringBefore("</tr>").substringBefore("</table>").trim()
+                if (chunk.isNotBlank()) {
+                    allRows.add(chunk)
+                }
+            }
         }
 
         if (searchType == SearchType.KHATIAN) {
@@ -1208,9 +1213,8 @@ class BanglarbhumiClient(private val context: Context? = null) {
         searchNumber: String
     ): String {
         val isPlot = searchType == SearchType.PLOT
-        // For Plot search: use cleaned portal HTML (matches user verified look)
-        // For Khatian search: use structured clean table markup (100% full screen width, no shrinkage or duplicate headers)
-        val tableContent = if (isPlot && extractedHtml.contains("<table", ignoreCase = true)) {
+        // Use cleaned portal HTML directly for authentic government records with full tables
+        val tableContent = if (extractedHtml.contains("<table", ignoreCase = true)) {
             cleanPortalHtml(extractedHtml)
         } else {
             generateCleanTableMarkup(parsedData, searchType, searchNumber)
@@ -1347,10 +1351,14 @@ class BanglarbhumiClient(private val context: Context? = null) {
         return fromTable
             .replace(Regex("(?i)<(?:h[1-6]|div|p|center)[^>]*>\\s*Live\\s*Data\\s*As\\s*On.*?</(?:h[1-6]|div|p|center)>"), "")
             .replace(Regex("(?i)<(?:h[1-6]|div|p|center|span|font)[^>]*>\\s*জে\\.?\\s*এল.*?</(?:h[1-6]|div|p|center|span|font)>"), "")
+            .replace(Regex("(?i)<center[^>]*>"), "<div>")
+            .replace(Regex("(?i)</center>"), "</div>")
+            .replace(Regex("(?i)\\s*align=[\"']center[\"']"), "")
             .replace(Regex("(?i)style=[\"'][^\"']*background[^\"']*[\"']"), "")
             .replace(Regex("(?i)bgcolor=[\"'][^\"']*[\"']"), "")
             .replace(Regex("(?i)\\s*width=[\"'][^\"']*[\"']"), "")
             .replace(Regex("(?i)\\s*height=[\"'][^\"']*[\"']"), "")
+            .replace(Regex("(?i)style=[\"'][^\"']*width:[^\"']*[\"']"), "")
     }
 
     private fun generateCleanTableMarkup(

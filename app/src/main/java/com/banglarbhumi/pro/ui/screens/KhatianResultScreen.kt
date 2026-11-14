@@ -135,8 +135,8 @@ fun KhatianResultScreen(
                         WebView(ctx).apply {
                             settings.javaScriptEnabled = true
                             settings.domStorageEnabled = true
-                            settings.loadWithOverviewMode = true
-                            settings.useWideViewPort = true
+                            settings.loadWithOverviewMode = false
+                            settings.useWideViewPort = false
                             settings.builtInZoomControls = true
                             settings.displayZoomControls = false
                             settings.defaultTextEncodingName = "UTF-8"
@@ -155,6 +155,8 @@ fun KhatianResultScreen(
                     },
                     update = { wv ->
                         webViewInstance = wv
+                        wv.settings.loadWithOverviewMode = false
+                        wv.settings.useWideViewPort = false
                         wv.settings.textZoom = 100
                         wv.setInitialScale(100)
                         wv.loadDataWithBaseURL(
