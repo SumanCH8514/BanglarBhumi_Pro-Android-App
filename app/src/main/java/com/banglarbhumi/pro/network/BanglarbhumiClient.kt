@@ -887,8 +887,9 @@ class BanglarbhumiClient(private val context: Context? = null) {
         // 3. Thana
         val thanaRegex = Pattern.compile("(?i)থানা\\s*[:ঃ]?\\s*([\\p{L}0-9\\-]+)")
         val thanaMatcher = thanaRegex.matcher(cleanText)
-        val thanaName = if (thanaMatcher.find()) {
-            thanaMatcher.group(1).orEmpty().trim()
+        val candidateThana = if (thanaMatcher.find()) thanaMatcher.group(1).orEmpty().trim() else ""
+        val thanaName = if (candidateThana.length > 2) {
+            candidateThana
         } else {
             blockName
         }
@@ -1213,8 +1214,10 @@ class BanglarbhumiClient(private val context: Context? = null) {
         searchNumber: String
     ): String {
         val isPlot = searchType == SearchType.PLOT
-        // Use cleaned portal HTML directly for authentic government records with full tables
-        val tableContent = if (extractedHtml.contains("<table", ignoreCase = true)) {
+        // Use clean responsive table markup whenever records are parsed, avoiding portal desktop 2-column outer tables
+        val tableContent = if (parsedData.owners.isNotEmpty() || parsedData.khatianSummary != null || parsedData.plotSummary != null) {
+            generateCleanTableMarkup(parsedData, searchType, searchNumber)
+        } else if (extractedHtml.contains("<table", ignoreCase = true)) {
             cleanPortalHtml(extractedHtml)
         } else {
             generateCleanTableMarkup(parsedData, searchType, searchNumber)
@@ -1276,11 +1279,12 @@ class BanglarbhumiClient(private val context: Context? = null) {
                         background-color: #D5E8D4 !important;
                         color: #000000 !important;
                         font-weight: bold !important;
-                        padding: 6px 4px !important;
+                        padding: 6px 3px !important;
                         border: 1px solid #B0B0B0 !important;
                         text-align: center !important;
                         font-size: $thFontSize !important;
                         white-space: normal !important;
+                        line-height: 1.25 !important;
                     }
                     td {
                         padding: $tdPadding !important;
@@ -1291,17 +1295,18 @@ class BanglarbhumiClient(private val context: Context? = null) {
                         word-break: break-word !important;
                     }
                     tr:nth-child(even) td {
-                        background-color: #F2F2F2 !important;
+                        background-color: #F8F9FA !important;
                     }
                     tr:nth-child(odd) td {
                         background-color: #FFFFFF !important;
                     }
                     table:first-of-type td:first-child {
                         font-weight: 500;
-                        width: 48%;
+                        width: 44%;
                     }
                     table:first-of-type td:last-child {
                         font-weight: 600;
+                        width: 56%;
                     }
                     .section-title {
                         font-size: 13px;
@@ -1349,8 +1354,9 @@ class BanglarbhumiClient(private val context: Context? = null) {
         val fromTable = if (firstTableIdx >= 0) rawHtml.substring(firstTableIdx) else rawHtml
 
         return fromTable
-            .replace(Regex("(?i)<(?:h[1-6]|div|p|center)[^>]*>\\s*Live\\s*Data\\s*As\\s*On.*?</(?:h[1-6]|div|p|center)>"), "")
-            .replace(Regex("(?i)<(?:h[1-6]|div|p|center|span|font)[^>]*>\\s*জে\\.?\\s*এল.*?</(?:h[1-6]|div|p|center|span|font)>"), "")
+            .replace(Regex("(?i)<(?:h[1-6]|div|p|center|font|span|b|td)[^>]*>\\s*\\(?\\s*Live\\s*Data\\s*As\\s*On.*?</(?:h[1-6]|div|p|center|font|span|b|td)>"), "")
+            .replace(Regex("(?i)<(?:h[1-6]|div|p|center|font|span|b|td)[^>]*>\\s*জে\\.?\\s*এল.*?</(?:h[1-6]|div|p|center|font|span|b|td)>"), "")
+            .replace(Regex("(?i)<td[^>]*>(?:\\s*|&nbsp;|<br/?>)*</td>"), "")
             .replace(Regex("(?i)<center[^>]*>"), "<div>")
             .replace(Regex("(?i)</center>"), "</div>")
             .replace(Regex("(?i)\\s*align=[\"']center[\"']"), "")
@@ -1377,8 +1383,12 @@ class BanglarbhumiClient(private val context: Context? = null) {
             val areaDisplayName = ks?.totalAreaAcre?.ifBlank { parsedData.totalAreaAcre } ?: parsedData.totalAreaAcre
             val plotCountDisplayName = ks?.plotCount?.ifBlank { "${parsedData.owners.size}" } ?: "${parsedData.owners.size}"
             val (kh1, kh2) = splitSearchNumber(searchNumber)
-            val displayKhatian = ks?.khatianNo?.ifBlank { kh1 } ?: kh1
+            var displayKhatian = ks?.khatianNo?.ifBlank { kh1 } ?: kh1
             val displayBataKhatian = if (!ks?.bataKhatianNo.isNullOrBlank()) ks.bataKhatianNo else kh2
+            if (displayBataKhatian.isNotBlank() && displayKhatian.contains("/")) {
+                displayKhatian = displayKhatian.substringBefore("/")
+            }
+            val cleanArea = areaDisplayName.replace("একর", "").replace("Acre", "").trim()
 
             sb.append("""
                 <table>
@@ -1388,20 +1398,20 @@ class BanglarbhumiClient(private val context: Context? = null) {
                     <tr><td>পিতা/স্বামী :</td><td>$guardianDisplayName</td></tr>
                     <tr><td>রায়তের ধরণ :</td><td>$rayatTypeDisplayName</td></tr>
                     <tr><td>ঠিকানা :</td><td>$addressDisplayName</td></tr>
-                    <tr><td>জমির পরিমাণ:</td><td>$areaDisplayName একর</td></tr>
+                    <tr><td>জমির পরিমাণ:</td><td>$cleanArea একর</td></tr>
                     <tr><td>দাগের সংখ্যা :</td><td>$plotCountDisplayName</td></tr>
                 </table>
                 <div class="section-title">অত্রস্বত্বের দাগের বিবরণ ও পরিমাণ:</div>
                 <div class="section-subtitle">(* দাগের অত্রস্বত্বের জমির যথার্থ পরিমাণ, দাগের মধ্যে অত্রসত্বের অংশ অনুসারে নির্ধারিত হইবে। )</div>
-                <table>
+                <table class="plots-table">
                     <thead>
                         <tr>
-                            <th>দাগ নং</th>
-                            <th>শ্রেণী</th>
-                            <th>অংশ</th>
-                            <th>অংশ পরিমাণ(একর)</th>
-                            <th>দখলদার</th>
-                            <th>মন্তব্য</th>
+                            <th style="width: 13%;">দাগ নং</th>
+                            <th style="width: 14%;">শ্রেণী</th>
+                            <th style="width: 18%;">অংশ</th>
+                            <th style="width: 25%;">অংশ পরিমাণ(একর)</th>
+                            <th style="width: 15%;">দখলদার</th>
+                            <th style="width: 15%;">মন্তব্য</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1432,25 +1442,26 @@ class BanglarbhumiClient(private val context: Context? = null) {
             val (dag1, dag2) = splitSearchNumber(searchNumber)
             val displayPlot = ps?.plotNo?.ifBlank { dag1 } ?: dag1
             val displayBata = if (!ps?.bataPlotNo.isNullOrBlank()) ps.bataPlotNo else dag2
+            val cleanArea = areaDisplay.replace("একর", "").replace("Acre", "").trim()
 
             sb.append("""
                 <table>
                     <tr><td>দাগ নং :</td><td>$displayPlot</td></tr>
                     ${if (displayBata.isNotBlank()) "<tr><td>বাটা দাগ নং :</td><td>$displayBata</td></tr>" else ""}
                     <tr><td>জমির শ্রেণী :</td><td>$landClassDisplay</td></tr>
-                    <tr><td>মোট পরিমাণ:</td><td>$areaDisplay একর</td></tr>
+                    <tr><td>মোট পরিমাণ:</td><td>$cleanArea একর</td></tr>
                 </table>
                 <div class="section-title">দাগের অত্রস্বত্বের রায়তের বিবরণ:</div>
                 <div class="section-subtitle">(* রায়তের অংশ অনুযায়ী দাগের জমির যথার্থ পরিমাণ নির্ধারিত হইবে। )</div>
-                <table>
+                <table class="rayats-table">
                     <thead>
                         <tr>
-                            <th>খতিয়ান নং</th>
-                            <th>রায়তের নাম</th>
-                            <th>পিতা/স্বামীর নাম</th>
-                            <th>অংশ</th>
-                            <th>অংশ পরিমাণ(একর)</th>
-                            <th>মন্তব্য</th>
+                            <th style="width: 14%;">খতিয়ান নং</th>
+                            <th style="width: 22%;">রায়তের নাম</th>
+                            <th style="width: 22%;">পিতা/স্বামীর নাম</th>
+                            <th style="width: 14%;">অংশ</th>
+                            <th style="width: 16%;">অংশ পরিমাণ(একর)</th>
+                            <th style="width: 12%;">মন্তব্য</th>
                         </tr>
                     </thead>
                     <tbody>
