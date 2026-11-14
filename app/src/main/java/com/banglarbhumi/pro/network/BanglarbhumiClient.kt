@@ -1592,11 +1592,17 @@ class BanglarbhumiClient(private val context: Context? = null) {
                 } else {
                     "${o.areaAcre} (${o.landClassification})"
                 }
+                val cleanOwner = if (o.ownerName.endsWith("ব্যক্তি")) {
+                    val c = o.ownerName.removeSuffix("ব্যক্তি").trim()
+                    if (c.isBlank()) o.ownerName else c
+                } else {
+                    o.ownerName
+                }
                 val rayatTypeHtml = if (o.rayatType.isNotBlank()) "<br><font color='purple'>${o.rayatType}</font>" else "<br><font color='purple'>ব্যক্তি</font>"
                 sb.append("""
                     <tr>
                         <td align="center">${o.khatianOrPlotNo}</td>
-                        <td align="center">${o.ownerName}$rayatTypeHtml</td>
+                        <td align="center">${cleanOwner}$rayatTypeHtml</td>
                         <td align="center">${o.guardianName}</td>
                         <td align="center">${o.share}</td>
                         <td align="center">$areaWithClass</td>
