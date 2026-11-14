@@ -208,7 +208,11 @@ fun MainAppContainer(viewModel: MainViewModel) {
             when (currentTab) {
                 NavigationTab.SEARCH -> {
                     if (searchResult != null) {
-                        ResultScreen(result = searchResult!!, viewModel = viewModel)
+                        if (searchResult!!.searchType == com.banglarbhumi.pro.data.model.SearchType.PLOT) {
+                            PlotResultScreen(result = searchResult!!, viewModel = viewModel)
+                        } else {
+                            KhatianResultScreen(result = searchResult!!, viewModel = viewModel)
+                        }
                     } else {
                         SearchScreen(viewModel = viewModel)
                     }

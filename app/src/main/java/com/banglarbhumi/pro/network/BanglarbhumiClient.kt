@@ -1087,18 +1087,31 @@ class BanglarbhumiClient(private val context: Context? = null) {
         searchType: SearchType,
         searchNumber: String
     ): String {
-        // If extractedHtml contains tables, use its cleaned content; otherwise generate structured tables
-        val tableContent = if (extractedHtml.contains("<table", ignoreCase = true)) {
+        val isPlot = searchType == SearchType.PLOT
+        // For Plot search: use cleaned portal HTML (matches user verified look)
+        // For Khatian search: use structured clean table markup (100% full screen width, no shrinkage or duplicate headers)
+        val tableContent = if (isPlot && extractedHtml.contains("<table", ignoreCase = true)) {
             cleanPortalHtml(extractedHtml)
         } else {
             generateCleanTableMarkup(parsedData, searchType, searchNumber)
         }
 
+        val viewportMeta = if (isPlot) {
+            "<meta name='viewport' content='width=device-width, initial-scale=0.82, maximum-scale=3.0, user-scalable=yes'>"
+        } else {
+            "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes'>"
+        }
+
+        val tableFontSize = if (isPlot) "12px" else "12.5px"
+        val thFontSize = if (isPlot) "12px" else "12.5px"
+        val tdFontSize = if (isPlot) "11.5px" else "12px"
+        val tdPadding = if (isPlot) "6px 4px" else "7px 5px"
+
         return """
             <!DOCTYPE html>
             <html>
             <head>
-                <meta name='viewport' content='width=device-width, initial-scale=0.82, maximum-scale=3.0, user-scalable=yes'>
+                $viewportMeta
                 <style>
                     * {
                         box-sizing: border-box;
@@ -1130,7 +1143,7 @@ class BanglarbhumiClient(private val context: Context? = null) {
                         border-collapse: collapse !important;
                         margin-top: 6px;
                         margin-bottom: 14px;
-                        font-size: 12px !important;
+                        font-size: $tableFontSize !important;
                         background-color: #FFFFFF;
                         border: 1px solid #C0C0C0 !important;
                         table-layout: auto !important;
@@ -1142,14 +1155,14 @@ class BanglarbhumiClient(private val context: Context? = null) {
                         padding: 6px 4px !important;
                         border: 1px solid #B0B0B0 !important;
                         text-align: center !important;
-                        font-size: 12px !important;
+                        font-size: $thFontSize !important;
                         white-space: normal !important;
                     }
                     td {
-                        padding: 6px 4px !important;
+                        padding: $tdPadding !important;
                         border: 1px solid #C0C0C0 !important;
                         color: #000000 !important;
-                        font-size: 11.5px !important;
+                        font-size: $tdFontSize !important;
                         vertical-align: middle !important;
                         word-break: break-word !important;
                     }

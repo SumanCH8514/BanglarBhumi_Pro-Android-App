@@ -273,9 +273,9 @@ fun SearchScreen(viewModel: MainViewModel) {
                         label = {
                             Text(
                                 text = if (searchType == SearchType.PLOT) {
-                                    if (isBengali) "৪. দাগ নম্বর" else "4. Plot / Dag No"
+                                    if (isBengali) "দাগ নম্বর" else "Plot / Dag No"
                                 } else {
-                                    if (isBengali) "৪. খতিয়ান নম্বর" else "4. Khatian No"
+                                    if (isBengali) "খতিয়ান নম্বর" else "Khatian No"
                                 },
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -324,9 +324,9 @@ fun SearchScreen(viewModel: MainViewModel) {
                         label = {
                             Text(
                                 text = if (searchType == SearchType.PLOT) {
-                                    if (isBengali) "বাটা দাগ নং" else "Bata Dag No"
+                                    if (isBengali) "বাটা নং" else "Bata No"
                                 } else {
-                                    if (isBengali) "বাটা খতিয়ান" else "Bata Khatian"
+                                    if (isBengali) "বাটা নং" else "Bata No"
                                 },
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -334,7 +334,7 @@ fun SearchScreen(viewModel: MainViewModel) {
                         },
                         placeholder = {
                             Text(
-                                text = if (isBengali) "ঐচ্ছিক (১)" else "Optional (1)",
+                                text = if (isBengali) "ঐচ্ছিক (১)" else "e.g. 1",
                                 color = Slate400,
                                 fontSize = 12.sp
                             )
@@ -377,14 +377,14 @@ fun SearchScreen(viewModel: MainViewModel) {
                 Text(
                     text = if (isBengali) {
                         if (searchType == SearchType.PLOT)
-                            "দাগ নম্বর (যেমন: ৫৯) এবং বাটা থাকলে বাটা দাগ (যেমন: ১) লিখুন"
+                            "দাগ নম্বর এবং বাটা থাকলে বাটা দাগ (যেমন: ১) লিখুন"
                         else
-                            "খতিয়ান নম্বর (যেমন: ১০১৩) এবং বাটা থাকলে বাটা খতিয়ান (যেমন: ১) লিখুন"
+                            "খতিয়ান নম্বর এবং বাটা থাকলে বাটা খতিয়ান (যেমন: ১) লিখুন"
                     } else {
                         if (searchType == SearchType.PLOT)
-                            "Enter Dag No (e.g. 59) and Bata if applicable (e.g. 1)"
+                            "Enter Dag No. and Bata if applicable (e.g. 1)"
                         else
-                            "Enter Khatian No (e.g. 1013) and Bata if applicable (e.g. 1)"
+                            "Enter Khatian No. and Bata if applicable (e.g. 1)"
                     },
                     fontSize = 11.5.sp,
                     color = Slate500,
