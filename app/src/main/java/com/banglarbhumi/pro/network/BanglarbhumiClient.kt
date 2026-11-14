@@ -888,11 +888,17 @@ class BanglarbhumiClient(private val context: Context? = null) {
         val thanaRegex = Pattern.compile("(?i)থানা\\s*[:ঃ]?\\s*([\\p{L}0-9\\-]+)")
         val thanaMatcher = thanaRegex.matcher(cleanText)
         val candidateThana = if (thanaMatcher.find()) thanaMatcher.group(1).orEmpty().trim() else ""
-        val thanaName = if (candidateThana.length > 2) {
+        val rawThana = if (candidateThana.length > 2 && !candidateThana.equals("KOTULPUR", ignoreCase = true)) {
             candidateThana
         } else {
             blockName
         }
+        val cleanThana = when {
+            rawThana.contains("(") -> rawThana.substringAfter("(").substringBefore(")").trim()
+            rawThana.equals("KOTULPUR", ignoreCase = true) -> "কোতুলপুর"
+            else -> rawThana
+        }
+        val thanaName = cleanThana
 
         // 4. Parse Tables
         val tableMatcher = Pattern.compile("(?i)<table[^>]*>(.*?)</table>", Pattern.DOTALL).matcher(html)
@@ -1229,11 +1235,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
             "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes'>"
         }
 
-        val tableFontSize = if (isPlot) "12px" else "12.5px"
-        val thFontSize = if (isPlot) "12px" else "12.5px"
-        val tdFontSize = if (isPlot) "11.5px" else "12px"
-        val tdPadding = if (isPlot) "6px 4px" else "7px 5px"
-
         return """
             <!DOCTYPE html>
             <html>
@@ -1253,87 +1254,114 @@ class BanglarbhumiClient(private val context: Context? = null) {
                         line-height: 1.35;
                     }
                     .live-date-header {
-                        color: #0000FF;
+                        color: #0000EE;
                         font-weight: bold;
-                        font-size: 13px;
+                        font-size: 13.5px;
                         margin-bottom: 4px;
                     }
                     .location-header {
                         color: #800000;
                         font-weight: bold;
-                        font-size: 13.5px;
-                        margin-bottom: 10px;
+                        font-size: 14px;
+                        margin-bottom: 12px;
                     }
-                    table {
+                    .summary-table {
                         width: 100% !important;
                         max-width: 100% !important;
                         border-collapse: collapse !important;
-                        margin-top: 6px;
-                        margin-bottom: 14px;
-                        font-size: $tableFontSize !important;
+                        margin-top: 4px;
+                        margin-bottom: 16px;
+                        font-size: 13px !important;
                         background-color: #FFFFFF;
                         border: 1px solid #C0C0C0 !important;
-                        table-layout: auto !important;
                     }
-                    th {
-                        background-color: #D5E8D4 !important;
-                        color: #000000 !important;
-                        font-weight: bold !important;
-                        padding: 6px 3px !important;
-                        border: 1px solid #B0B0B0 !important;
-                        text-align: center !important;
-                        font-size: $thFontSize !important;
-                        white-space: normal !important;
-                        line-height: 1.25 !important;
-                    }
-                    td {
-                        padding: $tdPadding !important;
+                    .summary-table td {
+                        padding: 7px 8px !important;
                         border: 1px solid #C0C0C0 !important;
                         color: #000000 !important;
-                        font-size: $tdFontSize !important;
+                        font-size: 13px !important;
                         vertical-align: middle !important;
-                        word-break: break-word !important;
                     }
-                    tr:nth-child(even) td {
-                        background-color: #F8F9FA !important;
+                    .summary-table td:first-child {
+                        font-weight: 500 !important;
+                        width: 46% !important;
                     }
-                    tr:nth-child(odd) td {
+                    .summary-table td:last-child {
+                        font-weight: normal !important;
+                        width: 54% !important;
+                    }
+                    .summary-table tr:nth-child(even) td {
+                        background-color: #EAEAEA !important;
+                    }
+                    .summary-table tr:nth-child(odd) td {
                         background-color: #FFFFFF !important;
                     }
-                    table:first-of-type td:first-child {
-                        font-weight: 500;
-                        width: 44%;
-                    }
-                    table:first-of-type td:last-child {
-                        font-weight: 600;
-                        width: 56%;
-                    }
                     .section-title {
-                        font-size: 13px;
+                        font-size: 13.5px;
                         font-weight: bold;
                         color: #000000;
-                        margin-top: 12px;
-                        margin-bottom: 2px;
+                        margin-top: 14px;
+                        margin-bottom: 3px;
                     }
                     .section-subtitle, font[color='purple'], font[color='#800080'] {
-                        font-size: 11px !important;
-                        color: #A21CAF !important;
-                        margin-bottom: 8px !important;
+                        font-size: 11.5px !important;
+                        color: #800080 !important;
+                        margin-bottom: 10px !important;
                         font-style: italic !important;
                         line-height: 1.35 !important;
                         display: block !important;
                     }
-                    a, .link, span.borga {
+                    .plots-table, .rayats-table {
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        border-collapse: collapse !important;
+                        margin-top: 6px;
+                        margin-bottom: 16px;
+                        font-size: 12.5px !important;
+                        background-color: #FFFFFF;
+                        border: 1px solid #C0C0C0 !important;
+                        table-layout: fixed !important;
+                    }
+                    .plots-table th, .rayats-table th {
+                        background-color: #D5E8D4 !important;
+                        color: #000000 !important;
+                        font-weight: bold !important;
+                        padding: 8px 3px !important;
+                        border: 1px solid #B0B0B0 !important;
+                        text-align: center !important;
+                        font-size: 13px !important;
+                        white-space: normal !important;
+                        line-height: 1.25 !important;
+                    }
+                    .plots-table td, .rayats-table td {
+                        padding: 7px 3px !important;
+                        border: 1px solid #C0C0C0 !important;
+                        color: #000000 !important;
+                        font-size: 12.5px !important;
+                        vertical-align: middle !important;
+                        word-break: break-word !important;
+                    }
+                    .plots-table tbody tr:nth-child(odd) td, .rayats-table tbody tr:nth-child(odd) td {
+                        background-color: #EAEAEA !important;
+                    }
+                    .plots-table tbody tr:nth-child(even) td, .rayats-table tbody tr:nth-child(even) td {
+                        background-color: #FFFFFF !important;
+                    }
+                    .blue-link {
                         color: #0000EE !important;
-                        font-weight: bold;
-                        text-decoration: underline;
+                        font-weight: bold !important;
+                        text-decoration: underline !important;
+                    }
+                    .red-text {
+                        color: #D32F2F !important;
+                        font-weight: bold !important;
                     }
                     .disclaimer-text {
-                        font-size: 11px;
+                        font-size: 11.5px;
                         color: #64748B;
                         text-align: center;
-                        margin-top: 20px;
-                        margin-bottom: 16px;
+                        margin-top: 24px;
+                        margin-bottom: 20px;
                         line-height: 1.4;
                     }
                 </style>
@@ -1383,21 +1411,22 @@ class BanglarbhumiClient(private val context: Context? = null) {
             val areaDisplayName = ks?.totalAreaAcre?.ifBlank { parsedData.totalAreaAcre } ?: parsedData.totalAreaAcre
             val plotCountDisplayName = ks?.plotCount?.ifBlank { "${parsedData.owners.size}" } ?: "${parsedData.owners.size}"
             val (kh1, kh2) = splitSearchNumber(searchNumber)
-            var displayKhatian = ks?.khatianNo?.ifBlank { kh1 } ?: kh1
+            val displayKhatian = ks?.khatianNo?.ifBlank { kh1 } ?: kh1
             val displayBataKhatian = if (!ks?.bataKhatianNo.isNullOrBlank()) ks.bataKhatianNo else kh2
-            if (displayBataKhatian.isNotBlank() && displayKhatian.contains("/")) {
-                displayKhatian = displayKhatian.substringBefore("/")
+            val displayKhatianFull = if (displayBataKhatian.isNotBlank() && !displayKhatian.contains("/")) {
+                "$displayKhatian/$displayBataKhatian"
+            } else {
+                displayKhatian
             }
             val cleanArea = areaDisplayName.replace("একর", "").replace("Acre", "").trim()
 
             sb.append("""
-                <table>
-                    <tr><td>খতিয়ান নং :</td><td>$displayKhatian</td></tr>
-                    ${if (displayBataKhatian.isNotBlank()) "<tr><td>বাটা খতিয়ান নং :</td><td>$displayBataKhatian</td></tr>" else ""}
-                    <tr><td>অত্রস্বত্বের দখলকারের নাম :</td><td>$ownerDisplayName</td></tr>
-                    <tr><td>পিতা/স্বামী :</td><td>$guardianDisplayName</td></tr>
-                    <tr><td>রায়তের ধরণ :</td><td>$rayatTypeDisplayName</td></tr>
-                    <tr><td>ঠিকানা :</td><td>$addressDisplayName</td></tr>
+                <table class="summary-table">
+                    <tr><td>খতিয়ান নং  :</td><td>$displayKhatianFull</td></tr>
+                    <tr><td>অত্রস্বত্বের দখলকারের নাম  :</td><td>$ownerDisplayName</td></tr>
+                    <tr><td>পিতা/স্বামী  :</td><td>$guardianDisplayName</td></tr>
+                    <tr><td>রায়তের ধরণ  :</td><td>$rayatTypeDisplayName</td></tr>
+                    <tr><td>ঠিকানা  :</td><td>$addressDisplayName</td></tr>
                     <tr><td>জমির পরিমাণ:</td><td>$cleanArea একর</td></tr>
                     <tr><td>দাগের সংখ্যা :</td><td>$plotCountDisplayName</td></tr>
                 </table>
@@ -1417,10 +1446,16 @@ class BanglarbhumiClient(private val context: Context? = null) {
                     <tbody>
             """.trimIndent())
             for (o in parsedData.owners) {
-                val possessorHtml = if (o.possessor.contains("বর্গা")) {
-                    "<span class='borga'>${o.possessor}</span>"
+                val possessorHtml = if (o.possessor.contains("বর্গা") || o.possessor.contains("অনুমতি")) {
+                    "<span class='blue-link'>${o.possessor}</span>"
                 } else {
                     o.possessor.ifBlank { "Nil" }
+                }
+                val remarksText = o.remarks.ifBlank { "Nil" }
+                val remarksHtml = if (remarksText.contains("Nil", ignoreCase = true)) {
+                    "<span class='red-text'>$remarksText</span>"
+                } else {
+                    remarksText
                 }
                 sb.append("""
                     <tr>
@@ -1429,7 +1464,7 @@ class BanglarbhumiClient(private val context: Context? = null) {
                         <td align="center">${o.share}</td>
                         <td align="center">${o.areaAcre}</td>
                         <td align="center">$possessorHtml</td>
-                        <td align="center">${o.remarks.ifBlank { "Nil" }}</td>
+                        <td align="center">$remarksHtml</td>
                     </tr>
                 """.trimIndent())
             }
@@ -1442,12 +1477,16 @@ class BanglarbhumiClient(private val context: Context? = null) {
             val (dag1, dag2) = splitSearchNumber(searchNumber)
             val displayPlot = ps?.plotNo?.ifBlank { dag1 } ?: dag1
             val displayBata = if (!ps?.bataPlotNo.isNullOrBlank()) ps.bataPlotNo else dag2
+            val displayPlotFull = if (displayBata.isNotBlank() && !displayPlot.contains("/")) {
+                "$displayPlot/$displayBata"
+            } else {
+                displayPlot
+            }
             val cleanArea = areaDisplay.replace("একর", "").replace("Acre", "").trim()
 
             sb.append("""
-                <table>
-                    <tr><td>দাগ নং :</td><td>$displayPlot</td></tr>
-                    ${if (displayBata.isNotBlank()) "<tr><td>বাটা দাগ নং :</td><td>$displayBata</td></tr>" else ""}
+                <table class="summary-table">
+                    <tr><td>দাগ নং  :</td><td>$displayPlotFull</td></tr>
                     <tr><td>জমির শ্রেণী :</td><td>$landClassDisplay</td></tr>
                     <tr><td>মোট পরিমাণ:</td><td>$cleanArea একর</td></tr>
                 </table>
@@ -1467,6 +1506,12 @@ class BanglarbhumiClient(private val context: Context? = null) {
                     <tbody>
             """.trimIndent())
             for (o in parsedData.owners) {
+                val remarksText = o.remarks.ifBlank { "Nil" }
+                val remarksHtml = if (remarksText.contains("Nil", ignoreCase = true)) {
+                    "<span class='red-text'>$remarksText</span>"
+                } else {
+                    remarksText
+                }
                 sb.append("""
                     <tr>
                         <td align="center">${o.khatianOrPlotNo}</td>
@@ -1474,7 +1519,7 @@ class BanglarbhumiClient(private val context: Context? = null) {
                         <td align="left">${o.guardianName}</td>
                         <td align="center">${o.share}</td>
                         <td align="center">${o.areaAcre}</td>
-                        <td align="center">${o.remarks.ifBlank { "Nil" }}</td>
+                        <td align="center">$remarksHtml</td>
                     </tr>
                 """.trimIndent())
             }

@@ -135,13 +135,12 @@ fun KhatianResultScreen(
                         WebView(ctx).apply {
                             settings.javaScriptEnabled = true
                             settings.domStorageEnabled = true
-                            settings.loadWithOverviewMode = false
-                            settings.useWideViewPort = false
+                            settings.loadWithOverviewMode = true
+                            settings.useWideViewPort = true
                             settings.builtInZoomControls = true
                             settings.displayZoomControls = false
                             settings.defaultTextEncodingName = "UTF-8"
                             settings.textZoom = 100
-                            setInitialScale(100)
                             webViewClient = WebViewClient()
                             webViewInstance = this
                             loadDataWithBaseURL(
@@ -155,10 +154,9 @@ fun KhatianResultScreen(
                     },
                     update = { wv ->
                         webViewInstance = wv
-                        wv.settings.loadWithOverviewMode = false
-                        wv.settings.useWideViewPort = false
+                        wv.settings.loadWithOverviewMode = true
+                        wv.settings.useWideViewPort = true
                         wv.settings.textZoom = 100
-                        wv.setInitialScale(100)
                         wv.loadDataWithBaseURL(
                             "https://banglarbhumi.gov.in/BanglarBhumi/",
                             result.rawHtml,
