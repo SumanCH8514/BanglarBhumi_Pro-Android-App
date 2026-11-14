@@ -441,7 +441,7 @@ fun SearchScreen(viewModel: MainViewModel) {
 
     if (showDistrictDialog) {
         SelectionDialog(
-            title = if (isBengali) "জেলা নির্বাচন করুন" else "Select District",
+            title = if (isBengali) "জেলা নির্বাচন করুন" else "Select District (জেলা)",
             items = districts,
             itemLabel = { "${it.en} - ${it.bn} (${it.code})" },
             onSelect = {
@@ -454,7 +454,7 @@ fun SearchScreen(viewModel: MainViewModel) {
 
     if (showBlockDialog) {
         SelectionDialog(
-            title = if (isBengali) "ব্লক নির্বাচন করুন" else "Select Block",
+            title = if (isBengali) "ব্লক নির্বাচন করুন" else "Select Block (ব্লক)",
             items = blocks,
             itemLabel = { "${it.en} (${it.bn})" },
             onSelect = {
@@ -467,7 +467,7 @@ fun SearchScreen(viewModel: MainViewModel) {
 
     if (showMouzaDialog) {
         SelectionDialog(
-            title = if (isBengali) "মৌজা নির্বাচন করুন" else "Select Mouza",
+            title = if (isBengali) "মৌজা নির্বাচন করুন" else "Select Mouza (মৌজা)",
             items = mouzas,
             itemLabel = { "JL ${it.code} - ${it.en} (${it.bn})" },
             onSelect = {

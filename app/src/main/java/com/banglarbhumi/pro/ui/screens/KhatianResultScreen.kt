@@ -94,18 +94,18 @@ fun KhatianResultScreen(
 
                     // Location / Record Tag (Expanded and perfectly laid out)
                     Column(
-                        horizontalAlignment = Alignment.End,
                         modifier = Modifier
                             .weight(1f)
                             .padding(start = 12.dp, end = 4.dp)
                     ) {
                         Text(
-                            text = formatLocationHierarchy(result.districtName, result.blockName, result.mouzaName, isBengali),
+                            text = viewModel.getLocationHierarchy(result, isBengali),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = Slate500,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.align(Alignment.End)
                         )
                         Text(
                             text = if (isBengali) "খতিয়ান: ${result.searchNumber}" else "Khatian: ${result.searchNumber}",
@@ -113,7 +113,8 @@ fun KhatianResultScreen(
                             fontWeight = FontWeight.Bold,
                             color = Emerald900,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.align(Alignment.Start)
                         )
                     }
                 }

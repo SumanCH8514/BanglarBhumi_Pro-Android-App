@@ -231,9 +231,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             try {
-                val distName = if (_isBengali.value) "${dist.en} (${dist.bn})" else dist.en
-                val blkName = if (_isBengali.value) "${blk.en} (${blk.bn})" else blk.en
-                val mzName = if (_isBengali.value) "${mz.en} (${mz.bn}) [${mz.code}]" else "${mz.en} [${mz.code}]"
+                val distName = if (dist.bn.isNotBlank()) "${dist.en} (${dist.bn})" else dist.en
+                val blkName = if (blk.bn.isNotBlank()) "${blk.en} (${blk.bn})" else blk.en
+                val mzName = if (mz.bn.isNotBlank()) "${mz.en} (${mz.bn}) [${mz.code}]" else "${mz.en} [${mz.code}]"
 
                 val result = landRecordRepository.searchLandRecord(
                     searchType = _searchType.value,
@@ -550,5 +550,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _selectedMouza.value = mz
             } catch (_: Exception) {}
         }
+    }
+
+    fun getLocationHierarchy(result: LandRecordResult, isBengali: Boolean): String {
+        return locationRepository.resolveLocationHierarchy(
+            districtCode = result.districtCode,
+            blockCode = result.blockCode,
+            mouzaCode = result.mouzaCode,
+            isBengali = isBengali,
+            fallbackDistrict = result.districtName,
+            fallbackBlock = result.blockName,
+            fallbackMouza = result.mouzaName
+        )
     }
 }

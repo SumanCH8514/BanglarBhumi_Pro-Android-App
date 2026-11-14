@@ -72,6 +72,69 @@ class LocationRepository(private val context: Context) {
         results
     }
 
+    fun resolveLocationHierarchy(
+        districtCode: String,
+        blockCode: String,
+        mouzaCode: String,
+        isBengali: Boolean,
+        fallbackDistrict: String = "",
+        fallbackBlock: String = "",
+        fallbackMouza: String = ""
+    ): String {
+        try {
+            val db = ensureLoaded()
+            val cleanDistCode = districtCode.trim()
+            val district = db.districts.find {
+                it.code == cleanDistCode ||
+                it.code.trimStart('0') == cleanDistCode.trimStart('0') ||
+                it.en.equals(cleanDistCode, ignoreCase = true) ||
+                it.en.equals(fallbackDistrict.substringBefore("[").substringBefore("(").trim(), ignoreCase = true)
+            }
+
+            val cleanBlockCode = if (blockCode.contains("_")) blockCode.split("_")[0].trim() else blockCode.trim()
+            val block = district?.blocks?.find {
+                it.code == cleanBlockCode ||
+                it.code == blockCode.trim() ||
+                it.code.trimStart('0') == cleanBlockCode.trimStart('0') ||
+                cleanBlockCode.endsWith(it.code) ||
+                it.en.equals(fallbackBlock.substringBefore("[").substringBefore("(").trim(), ignoreCase = true)
+            }
+
+            val cleanMouzaCode = mouzaCode.trim()
+            val mouza = block?.mouzas?.find {
+                it.code == cleanMouzaCode ||
+                it.code.trimStart('0') == cleanMouzaCode.trimStart('0') ||
+                it.mid == cleanMouzaCode ||
+                it.en.equals(fallbackMouza.substringBefore("[").substringBefore("(").trim(), ignoreCase = true)
+            }
+
+            fun cleanFallback(raw: String): String {
+                return if (isBengali) {
+                    val bn = Regex("""\(([^)]+)\)""").find(raw)?.groupValues?.get(1)?.trim()
+                    if (!bn.isNullOrBlank()) bn else raw.substringBefore("[").substringBefore("(").trim()
+                } else {
+                    raw.substringBefore("[").substringBefore("(").trim().uppercase()
+                }
+            }
+
+            val d = if (isBengali) (district?.bn?.ifBlank { null } ?: cleanFallback(fallbackDistrict)) else (district?.en?.uppercase() ?: cleanFallback(fallbackDistrict))
+            val b = if (isBengali) (block?.bn?.ifBlank { null } ?: cleanFallback(fallbackBlock)) else (block?.en?.uppercase() ?: cleanFallback(fallbackBlock))
+            val m = if (isBengali) (mouza?.bn?.ifBlank { null } ?: cleanFallback(fallbackMouza)) else (mouza?.en?.uppercase() ?: cleanFallback(fallbackMouza))
+
+            return "$d > $b > $m"
+        } catch (_: Exception) {
+            fun clean(raw: String): String {
+                return if (isBengali) {
+                    val bn = Regex("""\(([^)]+)\)""").find(raw)?.groupValues?.get(1)?.trim()
+                    if (!bn.isNullOrBlank()) bn else raw.substringBefore("[").substringBefore("(").trim()
+                } else {
+                    raw.substringBefore("[").substringBefore("(").trim().uppercase()
+                }
+            }
+            return "${clean(fallbackDistrict)} > ${clean(fallbackBlock)} > ${clean(fallbackMouza)}"
+        }
+    }
+
     private fun ensureLoaded(): LocationDatabase {
         val current = cachedDatabase
         if (current != null) return current
