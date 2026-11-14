@@ -212,17 +212,17 @@ object PdfExporter {
         val isKhatian = result.searchType == SearchType.KHATIAN
 
         val colWidths: FloatArray = if (isKhatian) {
-            // দাগ নং, শ্রেণী, অংশ, অংশ পরিমাণ(একর), দখলদার, মন্তব্য
-            floatArrayOf(65f, 75f, 95f, 130f, 85f, 85f) // Sum = 535f
+            // S/N, দাগ নং, শ্রেণী, অংশ, অংশ পরিমাণ(একর), দখলদার, মন্তব্য
+            floatArrayOf(35f, 60f, 70f, 85f, 115f, 85f, 85f) // Sum = 535f
         } else {
-            // খতিয়ান নং, দখলকারের নাম, পিতা/স্বামী, অংশ, অংশ পরিমাণ(একর) (শ্রেণী), দখলদার, মন্তব্য
-            floatArrayOf(60f, 125f, 110f, 55f, 105f, 40f, 40f) // Sum = 535f
+            // S/N, খতিয়ান নং, দখলকারের নাম, পিতা/স্বামী, অংশ, অংশ পরিমাণ(একর), দখলদার, মন্তব্য
+            floatArrayOf(30f, 55f, 115f, 105f, 50f, 100f, 40f, 40f) // Sum = 535f
         }
 
         val colHeaders: Array<String> = if (isKhatian) {
-            arrayOf("দাগ নং", "শ্রেণী", "অংশ", "অংশ পরিমাণ(একর)", "দখলদার", "মন্তব্য")
+            arrayOf("S/N", "দাগ নং", "শ্রেণী", "অংশ", "অংশ পরিমাণ(একর)", "দখলদার", "মন্তব্য")
         } else {
-            arrayOf("খতিয়ান নং", "দখলকারের নাম", "পিতা/স্বামী", "অংশ", "অংশ পরিমাণ(একর)", "দখলদার", "মন্তব্য")
+            arrayOf("S/N", "খতিয়ান নং", "দখলকারের নাম", "পিতা/স্বামী", "অংশ", "অংশ পরিমাণ(একর)", "দখলদার", "মন্তব্য")
         }
 
         val rowH = 20.5f
@@ -274,8 +274,10 @@ object PdfExporter {
 
             strokePaint.color = Color.parseColor("#C0C0C0")
 
+            val slNo = (index + 1).toString()
             val cells = if (isKhatian) {
                 arrayOf(
+                    slNo,
                     owner.khatianOrPlotNo.ifBlank { "-" },
                     owner.landClassification.ifBlank { "-" },
                     owner.share.ifBlank { "-" },
@@ -285,6 +287,7 @@ object PdfExporter {
                 )
             } else {
                 arrayOf(
+                    slNo,
                     owner.khatianOrPlotNo.ifBlank { "-" },
                     owner.ownerName.ifBlank { "-" },
                     owner.guardianName.ifBlank { "-" },
