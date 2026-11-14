@@ -647,10 +647,14 @@ class BanglarbhumiClient(private val context: Context? = null) {
         blockName: String,
         mouzaCode: String,
         mouzaName: String,
-        searchNumber: String
+        searchNumber: String,
+        bataNumber: String = ""
     ): Result<LandRecordResult> = withContext(Dispatchers.IO) {
         try {
-            val (part1, part2) = splitSearchNumber(searchNumber)
+            val (p1, p2) = splitSearchNumber(searchNumber)
+            val part1 = p1
+            val part2 = if (bataNumber.isNotBlank()) bataNumber.trim() else p2
+            val combinedSearchNumber = if (part2.isNotEmpty()) "$part1/$part2" else part1
 
             val cleanBlock = if (blockCode.contains("_")) {
                 val idx = blockCode.indexOf('_')
@@ -721,13 +725,13 @@ class BanglarbhumiClient(private val context: Context? = null) {
 
             if (extractedHtml.isBlank() || isErrorMessage(extractedHtml)) {
                 val cleanMsg = cleanHtmlText(extractedHtml)
-                val finalMsg = if (cleanMsg.isNotBlank()) cleanMsg else "উক্ত দাগ বা খতিয়ানের কোনো রেকর্ড পাওয়া যায়নি (No record found for $searchNumber)."
+                val finalMsg = if (cleanMsg.isNotBlank()) cleanMsg else "উক্ত দাগ বা খতিয়ানের কোনো রেকর্ড পাওয়া যায়নি (No record found for $combinedSearchNumber)."
                 return@withContext Result.failure(Exception(finalMsg))
             }
 
             val parsedData = parseRecordDataFromHtml(
                 html = extractedHtml,
-                searchNumber = searchNumber,
+                searchNumber = combinedSearchNumber,
                 searchType = searchType,
                 districtName = districtName,
                 blockName = blockName,
@@ -743,12 +747,12 @@ class BanglarbhumiClient(private val context: Context? = null) {
                 mouzaName = mouzaName,
                 mouzaCode = mouzaCode,
                 searchType = searchType,
-                searchNumber = searchNumber
+                searchNumber = combinedSearchNumber
             )
 
             val recordResult = LandRecordResult(
                 searchType = searchType,
-                searchNumber = searchNumber,
+                searchNumber = combinedSearchNumber,
                 districtCode = districtCode,
                 districtName = districtName,
                 blockCode = blockCode,
@@ -902,7 +906,9 @@ class BanglarbhumiClient(private val context: Context? = null) {
         var extractedTotalArea = ""
 
         if (searchType == SearchType.KHATIAN) {
-            var khNo = searchNumber
+            val (khMain, khBata) = splitSearchNumber(searchNumber)
+            var khNo = khMain
+            var bataKh = khBata
             var owner = ""
             var guardian = ""
             var rayatType = ""
@@ -920,6 +926,7 @@ class BanglarbhumiClient(private val context: Context? = null) {
                     val key = cells[0].replace("&nbsp;", " ").trim()
                     val value = cells[1].replace("&nbsp;", " ").trim()
                     when {
+                        key.contains("বাটা") -> bataKh = value.ifBlank { bataKh }
                         key.contains("খতিয়ান") -> khNo = value.ifBlank { khNo }
                         key.contains("দখলকার") || key.contains("মালিক") || (key.contains("নাম") && !key.contains("পিতা")) -> owner = value
                         key.contains("পিতা") || key.contains("স্বামী") || key.contains("অভিভাবক") -> guardian = value
@@ -938,7 +945,8 @@ class BanglarbhumiClient(private val context: Context? = null) {
                 rayatType = rayatType,
                 address = address,
                 totalAreaAcre = area,
-                plotCount = plots
+                plotCount = plots,
+                bataKhatianNo = bataKh
             )
             extractedTotalArea = area.replace("একর", "").replace("Acre", "").trim()
 
@@ -971,10 +979,11 @@ class BanglarbhumiClient(private val context: Context? = null) {
             }
         } else {
             // Plot Search
-            var plotNo = searchNumber
+            val (dagMain, dagBata) = splitSearchNumber(searchNumber)
+            var plotNo = dagMain
             var landClass = ""
             var area = ""
-            var bata = ""
+            var bata = dagBata
 
             // Table 1 (Plot Summary Table)
             val summaryHtml = tableList.getOrNull(0) ?: ""
@@ -986,10 +995,10 @@ class BanglarbhumiClient(private val context: Context? = null) {
                     val key = cells[0].replace("&nbsp;", " ").trim()
                     val value = cells[1].replace("&nbsp;", " ").trim()
                     when {
+                        key.contains("বাটা") -> bata = value.ifBlank { bata }
                         key.contains("দাগ নং") -> plotNo = value.ifBlank { plotNo }
                         key.contains("শ্রেণী") -> landClass = value
                         key.contains("মোট পরিমাণ") || key.contains("পরিমাণ") -> area = value
-                        key.contains("বাটা") -> bata = value
                     }
                 }
             }
@@ -1226,10 +1235,14 @@ class BanglarbhumiClient(private val context: Context? = null) {
             val addressDisplayName = ks?.address?.ifBlank { "নিজ" } ?: "নিজ"
             val areaDisplayName = ks?.totalAreaAcre?.ifBlank { parsedData.totalAreaAcre } ?: parsedData.totalAreaAcre
             val plotCountDisplayName = ks?.plotCount?.ifBlank { "${parsedData.owners.size}" } ?: "${parsedData.owners.size}"
+            val (kh1, kh2) = splitSearchNumber(searchNumber)
+            val displayKhatian = ks?.khatianNo?.ifBlank { kh1 } ?: kh1
+            val displayBataKhatian = if (!ks?.bataKhatianNo.isNullOrBlank()) ks.bataKhatianNo else kh2
 
             sb.append("""
                 <table>
-                    <tr><td>খতিয়ান নং :</td><td>${ks?.khatianNo?.ifBlank { searchNumber } ?: searchNumber}</td></tr>
+                    <tr><td>খতিয়ান নং :</td><td>$displayKhatian</td></tr>
+                    ${if (displayBataKhatian.isNotBlank()) "<tr><td>বাটা খতিয়ান নং :</td><td>$displayBataKhatian</td></tr>" else ""}
                     <tr><td>অত্রস্বত্বের দখলকারের নাম :</td><td>$ownerDisplayName</td></tr>
                     <tr><td>পিতা/স্বামী :</td><td>$guardianDisplayName</td></tr>
                     <tr><td>রায়তের ধরণ :</td><td>$rayatTypeDisplayName</td></tr>
@@ -1275,13 +1288,16 @@ class BanglarbhumiClient(private val context: Context? = null) {
             val firstOwner = parsedData.owners.firstOrNull()
             val landClassDisplay = ps?.landClassification?.ifBlank { firstOwner?.landClassification?.ifBlank { "-" } ?: "-" } ?: (firstOwner?.landClassification?.ifBlank { "-" } ?: "-")
             val areaDisplay = ps?.totalAreaAcre?.ifBlank { parsedData.totalAreaAcre } ?: parsedData.totalAreaAcre
+            val (dag1, dag2) = splitSearchNumber(searchNumber)
+            val displayPlot = ps?.plotNo?.ifBlank { dag1 } ?: dag1
+            val displayBata = if (!ps?.bataPlotNo.isNullOrBlank()) ps.bataPlotNo else dag2
 
             sb.append("""
                 <table>
-                    <tr><td>দাগ নং :</td><td>${ps?.plotNo?.ifBlank { searchNumber } ?: searchNumber}</td></tr>
+                    <tr><td>দাগ নং :</td><td>$displayPlot</td></tr>
+                    ${if (displayBata.isNotBlank()) "<tr><td>বাটা দাগ নং :</td><td>$displayBata</td></tr>" else ""}
                     <tr><td>জমির শ্রেণী :</td><td>$landClassDisplay</td></tr>
                     <tr><td>মোট পরিমাণ:</td><td>$areaDisplay একর</td></tr>
-                    ${if (!ps?.bataPlotNo.isNullOrBlank()) "<tr><td>বাটা দাগ নং :</td><td>${ps.bataPlotNo}</td></tr>" else ""}
                 </table>
                 <div class="section-title">দাগের অত্রস্বত্বের রায়তের বিবরণ:</div>
                 <div class="section-subtitle">(* রায়তের অংশ অনুযায়ী দাগের জমির যথার্থ পরিমাণ নির্ধারিত হইবে। )</div>

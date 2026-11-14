@@ -72,7 +72,8 @@ class LandRecordRepository(private val context: Context) {
         blockName: String,
         mouzaCode: String,
         mouzaName: String,
-        searchNumber: String
+        searchNumber: String,
+        bataNumber: String = ""
     ): Result<LandRecordResult> {
         return client.queryLandRecord(
             searchType = searchType,
@@ -82,7 +83,8 @@ class LandRecordRepository(private val context: Context) {
             blockName = blockName,
             mouzaCode = mouzaCode,
             mouzaName = mouzaName,
-            searchNumber = searchNumber
+            searchNumber = searchNumber,
+            bataNumber = bataNumber
         )
     }
 

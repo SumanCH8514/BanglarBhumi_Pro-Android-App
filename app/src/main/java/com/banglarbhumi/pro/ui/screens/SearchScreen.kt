@@ -18,11 +18,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -50,6 +53,7 @@ fun SearchScreen(viewModel: MainViewModel) {
 
     val searchType by viewModel.searchType.collectAsState()
     val searchNumber by viewModel.searchNumber.collectAsState()
+    val bataNumber by viewModel.bataNumber.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
 
@@ -61,6 +65,7 @@ fun SearchScreen(viewModel: MainViewModel) {
     var showBlockDialog by remember { mutableStateOf(false) }
     var showMouzaDialog by remember { mutableStateOf(false) }
 
+    val bataFocusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     val isImeVisible = WindowInsets.isImeVisible
@@ -257,49 +262,133 @@ fun SearchScreen(viewModel: MainViewModel) {
                     onClick = { showMouzaDialog = true }
                 )
 
-                OutlinedTextField(
-                    value = searchNumber,
-                    onValueChange = { viewModel.setSearchNumber(it) },
-                    label = {
-                        Text(
-                            text = if (searchType == SearchType.PLOT) {
-                                if (isBengali) "দাগ নং (বাটার ক্ষেত্রে স্লাশ দিন, উদাঃ 105/1)" else "Plot / Dag No (e.g. 105 or 105/1)"
-                            } else {
-                                if (isBengali) "খতিয়ান নং (উদাঃ 489 বা 489/1)" else "Khatian No (e.g. 489)"
+                // 4. Dag / Khatian Number & Bata Number Inputs
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedTextField(
+                        value = searchNumber,
+                        onValueChange = { viewModel.setSearchNumber(it) },
+                        label = {
+                            Text(
+                                text = if (searchType == SearchType.PLOT) {
+                                    if (isBengali) "৪. দাগ নম্বর" else "4. Plot / Dag No"
+                                } else {
+                                    if (isBengali) "৪. খতিয়ান নম্বর" else "4. Khatian No"
+                                },
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        placeholder = {
+                            Text(
+                                text = if (searchType == SearchType.PLOT) "59" else "1013",
+                                color = Slate400
+                            )
+                        },
+                        modifier = Modifier
+                            .weight(1.35f)
+                            .onFocusChanged { focusState ->
+                                if (focusState.isFocused) {
+                                    coroutineScope.launch {
+                                        delay(200)
+                                        scrollState.animateScrollTo(scrollState.maxValue)
+                                    }
+                                }
+                            },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = {
+                                bataFocusRequester.requestFocus()
                             }
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Slate900,
+                            unfocusedTextColor = Slate900,
+                            focusedBorderColor = Emerald700,
+                            unfocusedBorderColor = Slate300,
+                            focusedLabelColor = Emerald800,
+                            unfocusedLabelColor = Slate600
                         )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusChanged { focusState ->
-                            if (focusState.isFocused) {
-                                coroutineScope.launch {
-                                    delay(200)
-                                    scrollState.animateScrollTo(scrollState.maxValue)
+                    )
+
+                    OutlinedTextField(
+                        value = bataNumber,
+                        onValueChange = { viewModel.setBataNumber(it) },
+                        label = {
+                            Text(
+                                text = if (searchType == SearchType.PLOT) {
+                                    if (isBengali) "বাটা দাগ নং" else "Bata Dag No"
+                                } else {
+                                    if (isBengali) "বাটা খতিয়ান" else "Bata Khatian"
+                                },
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        placeholder = {
+                            Text(
+                                text = if (isBengali) "ঐচ্ছিক (১)" else "Optional (1)",
+                                color = Slate400,
+                                fontSize = 12.sp
+                            )
+                        },
+                        modifier = Modifier
+                            .weight(1.05f)
+                            .focusRequester(bataFocusRequester)
+                            .onFocusChanged { focusState ->
+                                if (focusState.isFocused) {
+                                    coroutineScope.launch {
+                                        delay(200)
+                                        scrollState.animateScrollTo(scrollState.maxValue)
+                                    }
+                                }
+                            },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Search
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onSearch = {
+                                if (!isLoading) {
+                                    viewModel.performSearch()
                                 }
                             }
-                        },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Search
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onSearch = {
-                            if (!isLoading) {
-                                viewModel.performSearch()
-                            }
-                        }
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Slate900,
-                        unfocusedTextColor = Slate900,
-                        focusedBorderColor = Emerald700,
-                        unfocusedBorderColor = Slate300,
-                        focusedLabelColor = Emerald800,
-                        unfocusedLabelColor = Slate600
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Slate900,
+                            unfocusedTextColor = Slate900,
+                            focusedBorderColor = Emerald700,
+                            unfocusedBorderColor = Slate300,
+                            focusedLabelColor = Emerald800,
+                            unfocusedLabelColor = Slate600
+                        )
                     )
+                }
+
+                Text(
+                    text = if (isBengali) {
+                        if (searchType == SearchType.PLOT)
+                            "দাগ নম্বর (যেমন: ৫৯) এবং বাটা থাকলে বাটা দাগ (যেমন: ১) লিখুন"
+                        else
+                            "খতিয়ান নম্বর (যেমন: ১০১৩) এবং বাটা থাকলে বাটা খতিয়ান (যেমন: ১) লিখুন"
+                    } else {
+                        if (searchType == SearchType.PLOT)
+                            "Enter Dag No (e.g. 59) and Bata if applicable (e.g. 1)"
+                        else
+                            "Enter Khatian No (e.g. 1013) and Bata if applicable (e.g. 1)"
+                    },
+                    fontSize = 11.5.sp,
+                    color = Slate500,
+                    modifier = Modifier.padding(start = 4.dp, top = 2.dp)
                 )
 
                 if (errorMessage != null) {

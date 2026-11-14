@@ -12,7 +12,8 @@ data class KhatianSummary(
     val rayatType: String = "",
     val address: String = "",
     val totalAreaAcre: String = "",
-    val plotCount: String = ""
+    val plotCount: String = "",
+    val bataKhatianNo: String = ""
 )
 
 data class PlotSummary(

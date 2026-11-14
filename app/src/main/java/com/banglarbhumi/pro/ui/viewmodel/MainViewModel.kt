@@ -54,6 +54,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _searchNumber = MutableStateFlow("")
     val searchNumber: StateFlow<String> = _searchNumber.asStateFlow()
 
+    private val _bataNumber = MutableStateFlow("")
+    val bataNumber: StateFlow<String> = _bataNumber.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -186,7 +189,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setSearchNumber(num: String) {
-        _searchNumber.value = num
+        if (num.contains("/")) {
+            val parts = num.split("/", limit = 2)
+            _searchNumber.value = parts[0].trim()
+            _bataNumber.value = parts[1].trim()
+        } else {
+            _searchNumber.value = num
+        }
+    }
+
+    fun setBataNumber(bata: String) {
+        _bataNumber.value = bata.replace("/", "").trim()
     }
 
     fun performSearch() {
@@ -194,9 +207,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val blk = _selectedBlock.value
         val mz = _selectedMouza.value
         val queryNum = _searchNumber.value.trim()
+        val bataNum = _bataNumber.value.trim()
 
         if (dist == null || blk == null || mz == null || queryNum.isEmpty()) {
-            _errorMessage.value = if (_isBengali.value) "সবগুলো ঘর পূরণ করুন" else "Please fill all fields"
+            _errorMessage.value = if (_isBengali.value) {
+                if (queryNum.isEmpty()) {
+                    if (_searchType.value == SearchType.PLOT) "দাগ নম্বর লিখুন" else "খতিয়ান নম্বর লিখুন"
+                } else {
+                    "সবগুলো ঘর পূরণ করুন"
+                }
+            } else {
+                if (queryNum.isEmpty()) {
+                    if (_searchType.value == SearchType.PLOT) "Please enter Plot / Dag number" else "Please enter Khatian number"
+                } else {
+                    "Please fill all fields"
+                }
+            }
             return
         }
 
@@ -217,7 +243,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     blockName = blkName,
                     mouzaCode = mz.code,
                     mouzaName = mzName,
-                    searchNumber = queryNum
+                    searchNumber = queryNum,
+                    bataNumber = bataNum
                 )
 
                 if (result.isSuccess) {
