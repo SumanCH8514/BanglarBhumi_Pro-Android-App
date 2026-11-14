@@ -29,6 +29,7 @@ import com.banglarbhumi.pro.data.model.LandRecordResult
 import com.banglarbhumi.pro.ui.theme.*
 import com.banglarbhumi.pro.ui.viewmodel.MainViewModel
 import com.banglarbhumi.pro.util.PdfExporter
+import com.banglarbhumi.pro.util.PdfStorageManager
 import kotlinx.coroutines.launch
 
 /**
@@ -173,34 +174,27 @@ fun KhatianResultScreen(
         // Floating "SAVE PDF" Button at Bottom Right (Matching screenshot)
         Button(
             onClick = {
-                val wv = webViewInstance
-                if (wv != null) {
-                    try {
-                        val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
-                        val jobName = "BanglarBhumi_KHATIAN_${result.searchNumber}"
-                        val printAdapter = wv.createPrintDocumentAdapter(jobName)
-                        printManager?.print(jobName, printAdapter, PrintAttributes.Builder().build())
-                    } catch (_: Exception) {
-                        coroutineScope.launch {
-                            try {
-                                isExportingPdf = true
-                                val pdfFile = PdfExporter.generateLandRecordPdf(context, result)
-                                val uri = FileProvider.getUriForFile(
-                                    context,
-                                    "${context.packageName}.provider",
-                                    pdfFile
-                                )
-                                val intent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "application/pdf"
-                                    putExtra(Intent.EXTRA_STREAM, uri)
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                context.startActivity(Intent.createChooser(intent, "Share Land Record PDF"))
-                            } catch (ex: Exception) {
-                                Toast.makeText(context, "Export failed: ${ex.message}", Toast.LENGTH_SHORT).show()
-                            } finally {
-                                isExportingPdf = false
+                if (!isExportingPdf) {
+                    coroutineScope.launch {
+                        try {
+                            isExportingPdf = true
+                            val saveResult = PdfStorageManager.savePdf(context, webViewInstance, result)
+                            if (saveResult.isSuccess) {
+                                val file = saveResult.getOrThrow()
+                                viewModel.loadSavedPdfs()
+                                val msg = if (isBengali)
+                                    "পিডিএফ সফলভাবে সংরক্ষিত হয়েছে:\n${file.name}"
+                                else
+                                    "PDF saved to Downloads:\n${file.name}"
+                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                            } else {
+                                val err = saveResult.exceptionOrNull()?.message ?: "Save failed"
+                                Toast.makeText(context, "Error saving PDF: $err", Toast.LENGTH_SHORT).show()
                             }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        } finally {
+                            isExportingPdf = false
                         }
                     }
                 }
@@ -223,7 +217,11 @@ fun KhatianResultScreen(
                     strokeWidth = 2.dp
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "GENERATING...", fontWeight = FontWeight.Bold, fontSize = 13.5.sp)
+                Text(
+                    text = if (isBengali) "সংরক্ষণ হচ্ছে..." else "SAVING...",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.5.sp
+                )
             } else {
                 Icon(
                     imageVector = Icons.Default.PictureAsPdf,
@@ -233,7 +231,7 @@ fun KhatianResultScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "SAVE PDF",
+                    text = if (isBengali) "PDF সেভ করুন" else "SAVE PDF",
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
                     letterSpacing = 0.5.sp

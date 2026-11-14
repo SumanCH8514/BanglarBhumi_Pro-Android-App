@@ -15,6 +15,9 @@ import com.banglarbhumi.pro.data.model.SearchType
 import com.banglarbhumi.pro.data.repository.LandRecordRepository
 import com.banglarbhumi.pro.data.repository.LocationRepository
 import com.banglarbhumi.pro.network.BanglarbhumiAuthRequiredException
+import com.banglarbhumi.pro.util.PdfStorageManager
+import com.banglarbhumi.pro.util.SavedPdfItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -68,6 +71,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _savedRecords = MutableStateFlow<List<SavedLandRecord>>(emptyList())
     val savedRecords: StateFlow<List<SavedLandRecord>> = _savedRecords.asStateFlow()
+
+    private val _savedPdfs = MutableStateFlow<List<SavedPdfItem>>(emptyList())
+    val savedPdfs: StateFlow<List<SavedPdfItem>> = _savedPdfs.asStateFlow()
 
     private val _isSaved = MutableStateFlow(false)
     val isSaved: StateFlow<Boolean> = _isSaved.asStateFlow()
@@ -131,6 +137,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     init {
         loadDistricts()
         loadSavedRecords()
+        loadSavedPdfs()
         if (_isPortalLoggedIn.value) {
             refreshCitizenNameFromPortal()
         }
@@ -496,6 +503,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun loadSavedRecords() {
         viewModelScope.launch {
             _savedRecords.value = landRecordRepository.getSavedRecords()
+        }
+    }
+
+    fun loadSavedPdfs() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val list = PdfStorageManager.getSavedPdfs(getApplication())
+            _savedPdfs.value = list
+        }
+    }
+
+    fun deleteSavedPdf(item: SavedPdfItem) {
+        viewModelScope.launch(Dispatchers.IO) {
+            PdfStorageManager.deleteSavedPdf(getApplication(), item)
+            loadSavedPdfs()
         }
     }
 
