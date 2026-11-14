@@ -570,7 +570,9 @@ fun AccountScreen(
 
         // ─── ABOUT PROJECT SECTION ───
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
@@ -599,9 +601,9 @@ fun AccountScreen(
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     AccountListItem(
-                        icon = Icons.Default.Apps,
-                        title = "BanglarBhumi Pro",
-                        subtitle = if (isBengali) "পশ্চিমবঙ্গ ভূমি ও ভূমি সংস্কার সিটিজেন তথ্য সহায়ক" else "West Bengal Land Records Citizen Companion",
+                        icon = Icons.Default.NewReleases,
+                        title = if (isBengali) "ভার্সন v1.1.0 রিলিজ নোটস ও আপডেট" else "Version v1.1.0 Release Notes & Updates",
+                        subtitle = if (isBengali) "নতুন ফিচার, PDF অপটিমাইজেশন ও বাগ ফিক্স" else "New features, PDF optimizations & bug fixes",
                         trailing = {
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
@@ -615,23 +617,6 @@ fun AccountScreen(
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                 )
                             }
-                        },
-                        onClick = { showAboutProjectDialog = true }
-                    )
-
-                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 56.dp))
-
-                    AccountListItem(
-                        icon = Icons.Default.NewReleases,
-                        title = if (isBengali) "ভার্সন v1.1.0 রিলিজ নোটস ও আপডেট" else "Version v1.1.0 Release Notes & Updates",
-                        subtitle = if (isBengali) "নতুন ফিচার, PDF অপটিমাইজেশন ও বাগ ফিক্স" else "New features, PDF optimizations & bug fixes",
-                        trailing = {
-                            Icon(
-                                imageVector = Icons.Default.ChevronRight,
-                                contentDescription = null,
-                                tint = Slate400,
-                                modifier = Modifier.size(18.dp)
-                            )
                         },
                         onClick = { showAboutProjectDialog = true }
                     )
@@ -653,28 +638,6 @@ fun AccountScreen(
                         onClick = {
                             try {
                                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://sumanonline.com"))
-                                context.startActivity(intent)
-                            } catch (_: Exception) {}
-                        }
-                    )
-
-                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 56.dp))
-
-                    AccountListItem(
-                        icon = Icons.Default.Code,
-                        title = if (isBengali) "GitHub রিপোজিটরি ও রিলিজ" else "GitHub Repository & Releases",
-                        subtitle = "SumanCH8514/BanglarBhumi_Pro-Android-App",
-                        trailing = {
-                            Icon(
-                                imageVector = Icons.Default.OpenInNew,
-                                contentDescription = null,
-                                tint = Slate400,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        onClick = {
-                            try {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/SumanCH8514/BanglarBhumi_Pro-Android-App/releases/tag/v1.1.0"))
                                 context.startActivity(intent)
                             } catch (_: Exception) {}
                         }
