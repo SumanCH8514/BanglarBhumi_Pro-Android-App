@@ -1373,6 +1373,9 @@ class BanglarbhumiClient(private val context: Context? = null) {
                         margin-top: 10px !important;
                         margin-bottom: 10px !important;
                     }
+                    input, textarea, button, form {
+                        display: none !important;
+                    }
                     a, .blue-link, .link {
                         color: #0000EE !important;
                         font-weight: bold !important;
@@ -1405,9 +1408,10 @@ class BanglarbhumiClient(private val context: Context? = null) {
     private fun cleanPortalHtml(rawHtml: String): String {
         // Strip everything before the first <table tag so unstyled portal headers are not duplicated
         val firstTableIdx = rawHtml.indexOf("<table", ignoreCase = true)
-        val fromTable = if (firstTableIdx >= 0) rawHtml.substring(firstTableIdx) else rawHtml
+        var fromTable = if (firstTableIdx >= 0) rawHtml.substring(firstTableIdx) else rawHtml
 
-        return fromTable
+        // 1. Remove duplicate unstyled portal headers & formatting artifacts
+        fromTable = fromTable
             .replace(Regex("(?i)<(?:h[1-6]|div|p|center)[^>]*>\\s*Live\\s*Data\\s*As\\s*On.*?</(?:h[1-6]|div|p|center)>"), "")
             .replace(Regex("(?i)<(?:h[1-6]|div|p|center|span|font|b)[^>]*>\\s*জে\\.?\\s*এল.*?</(?:h[1-6]|div|p|center|span|font|b)>"), "")
             .replace(Regex("(?i)<center[^>]*>"), "<div>")
@@ -1418,6 +1422,36 @@ class BanglarbhumiClient(private val context: Context? = null) {
             .replace(Regex("(?i)\\s*width=[\"'][^\"']*[\"']"), "")
             .replace(Regex("(?i)\\s*height=[\"'][^\"']*[\"']"), "")
             .replace(Regex("(?i)style=[\"'][^\"']*width:[^\"']*[\"']"), "")
+
+        // 2. Remove "দাগের ম্যাপ" column header and "Click Here" link from top summary table
+        fromTable = fromTable
+            .replace(Regex("(?is)<th[^>]*>(?:(?!</th>).)*(?:দাগের\\s*ম্যাপ|ম্যাপ|Map)(?:(?!</th>).)*</th>"), "")
+            .replace(Regex("(?is)<td[^>]*>(?:(?!</td>).)*(?:Click\\s*Here|showMap)(?:(?!</td>).)*</td>"), "")
+
+        // 3. Remove trailing captcha / input / form / empty box tables after rayats table
+        fromTable = fromTable
+            .replace(Regex("(?is)<form[^>]*>.*?</form>"), "")
+            .replace(Regex("(?is)<table[^>]*>(?:(?!</table>).)*(?:<input|<textarea|<button|captcha|type=[\"']text[\"'])(?:(?!</table>).)*</table>"), "")
+            .replace(Regex("(?is)<input[^>]*>"), "")
+            .replace(Regex("(?is)<textarea[^>]*>.*?</textarea>"), "")
+            .replace(Regex("(?is)<button[^>]*>.*?</button>"), "")
+            .replace(Regex("(?is)<table[^>]*>(?:\\s*|&nbsp;|<(?:tr|td|th|tbody|thead|div|p|span|br)[^>]*>|</td>|</tr>|</tbody>|</thead>|</p>|</div>|</span>)*</table>"), "")
+
+        // 4. Ensure we don't keep any trailing non-data tables after the rayat table ends
+        val rayatIdx = maxOf(
+            fromTable.lastIndexOf("খতিয়ান", ignoreCase = true),
+            fromTable.lastIndexOf("Khatian", ignoreCase = true),
+            fromTable.lastIndexOf("দখলকার", ignoreCase = true)
+        )
+        if (rayatIdx > 0) {
+            val tableEndAfterRayat = fromTable.indexOf("</table>", rayatIdx, ignoreCase = true)
+            if (tableEndAfterRayat > 0) {
+                val endPos = tableEndAfterRayat + "</table>".length
+                fromTable = fromTable.substring(0, endPos).trim()
+            }
+        }
+
+        return fromTable
     }
 
     private fun generateCleanTableMarkup(
@@ -1513,10 +1547,9 @@ class BanglarbhumiClient(private val context: Context? = null) {
                 <table class="plots-table">
                     <thead>
                         <tr>
-                            <th style="width: 22%;">দাগ নং</th>
-                            <th style="width: 22%;">শ্রেণী</th>
-                            <th style="width: 34%;">জমির মোট পরিমাণ(একর)</th>
-                            <th style="width: 22%;">দাগের ম্যাপ</th>
+                            <th style="width: 30%;">দাগ নং</th>
+                            <th style="width: 32%;">শ্রেণী</th>
+                            <th style="width: 38%;">জমির মোট পরিমাণ(একর)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1524,7 +1557,6 @@ class BanglarbhumiClient(private val context: Context? = null) {
                             <td align="center">$displayPlotFull</td>
                             <td align="center">$landClassDisplay</td>
                             <td align="center">$cleanArea</td>
-                            <td align="center"><a href="javascript:void(0)" class="blue-link">Click Here</a></td>
                         </tr>
                     </tbody>
                 </table>
