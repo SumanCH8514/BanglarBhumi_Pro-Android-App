@@ -15,17 +15,24 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -41,6 +48,7 @@ fun AccountScreen(
     onNavigateToSaved: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
     val isBengali by viewModel.isBengali.collectAsState()
     val isPortalLoggedIn by viewModel.isPortalLoggedIn.collectAsState()
     val loggedInPortalUsername by viewModel.loggedInPortalUsername.collectAsState()
@@ -56,6 +64,7 @@ fun AccountScreen(
     var showEditNameDialog by remember { mutableStateOf(false) }
     var showAboutProjectDialog by remember { mutableStateOf(false) }
     var editNameText by remember { mutableStateOf("") }
+    var autoSmsConsentEnabled by remember { mutableStateOf(true) }
 
     LaunchedEffect(isPortalLoggedIn) {
         if (isPortalLoggedIn) {
@@ -169,134 +178,178 @@ fun AccountScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(18.dp),
+            shape = RoundedCornerShape(22.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0).copy(alpha = 0.8f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(18.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-
                     Box(
-                        modifier = Modifier
-                            .size(68.dp)
-                            .clip(CircleShape)
-                            .background(Emerald100)
-                            .border(2.dp, Emerald500.copy(alpha = 0.5f), CircleShape),
-                        contentAlignment = Alignment.Center
+                        modifier = Modifier.size(62.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile Picture",
-                            tint = Emerald800,
-                            modifier = Modifier.size(42.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(58.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFDCFCE7))
+                                .border(1.5.dp, Color(0xFF86EFAC), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Profile Picture",
+                                tint = Color(0xFF15803D),
+                                modifier = Modifier.size(36.dp)
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .align(Alignment.BottomEnd)
+                                .clip(CircleShape)
+                                .background(Color(0xFF14532D))
+                                .border(1.5.dp, Color.White, CircleShape)
+                                .clickable {
+                                    Toast.makeText(
+                                        context,
+                                        if (isBengali) "প্রোফাইল ছবি পরিবর্তন শীঘ্রই আসছে" else "Profile photo update coming soon",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PhotoCamera,
+                                contentDescription = "Change Photo",
+                                tint = Color.White,
+                                modifier = Modifier.size(11.dp)
+                            )
+                        }
                     }
 
-                    Column(modifier = Modifier.weight(1f)) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = displayCitizenName,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Slate900
-                            )
-                            if (displayIdentifier.isNotBlank()) {
-                                IconButton(
-                                    onClick = {
-                                        editNameText = citizenName
-                                        showEditNameDialog = true
-                                    },
-                                    modifier = Modifier.size(26.dp)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.weight(1f, fill = false)
+                            ) {
+                                Text(
+                                    text = displayCitizenName,
+                                    fontSize = 17.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Slate900
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Edit Name",
+                                    tint = Slate400,
+                                    modifier = Modifier
+                                        .size(15.dp)
+                                        .clickable {
+                                            editNameText = citizenName
+                                            showEditNameDialog = true
+                                        }
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.weight(1f))
+
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = if (isPortalLoggedIn) Color(0xFFDCFCE7) else Color(0xFFFEF3C7),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    if (isPortalLoggedIn) Color(0xFF86EFAC) else Color(0xFFFDE68A)
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Edit,
-                                        contentDescription = "Edit or Set Name",
-                                        tint = Emerald700,
-                                        modifier = Modifier.size(16.dp)
+                                        imageVector = if (isPortalLoggedIn) Icons.Default.CheckCircle else Icons.Default.LinkOff,
+                                        contentDescription = null,
+                                        tint = if (isPortalLoggedIn) Color(0xFF15803D) else Color(0xFFB45309),
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Text(
+                                        text = if (isPortalLoggedIn) {
+                                            if (isBengali) "কানেক্টেড" else "Connected"
+                                        } else {
+                                            if (isBengali) "ডিসকানেক্টেড" else "Disconnected"
+                                        },
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isPortalLoggedIn) Color(0xFF15803D) else Color(0xFFB45309)
                                     )
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(3.dp))
-
-                        if (displayIdentifier.isNotBlank()) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = if (isBengali) "ইউজার আইডি:" else "User ID:",
-                                    fontSize = 13.5.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Slate500
-                                )
-                                Text(
-                                    text = displayIdentifier,
-                                    fontSize = 13.5.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Slate800
-                                )
-                            }
-                        } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
                             Text(
-                                text = if (isBengali) "বাংলারভূমি পোর্টালে লগইন করুন" else "Login to BanglarBhumi portal",
+                                text = if (isBengali) "ইউজার আইডি: " else "User ID: ",
                                 fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
                                 color = Slate500
                             )
-                        }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (isPortalLoggedIn) Emerald100 else GoldLight
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
+                            Text(
+                                text = if (displayIdentifier.isNotBlank()) displayIdentifier else (if (isBengali) "পোর্টালে লগইন নেই" else "Not Available"),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Slate800
+                            )
+                            if (displayIdentifier.isNotBlank()) {
                                 Icon(
-                                    imageVector = if (isPortalLoggedIn) Icons.Default.CheckCircle else Icons.Default.Info,
-                                    contentDescription = null,
-                                    tint = if (isPortalLoggedIn) Emerald800 else GoldAccent,
-                                    modifier = Modifier.size(13.dp)
-                                )
-                                Text(
-                                    text = if (isPortalLoggedIn) {
-                                        if (isBengali) "পোর্টাল কানেক্টেড (সক্রিয়)" else "Portal Connected (Active)"
-                                    } else {
-                                        if (isBengali) "পোর্টালে লগইন নেই" else "Portal Not Connected"
-                                    },
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isPortalLoggedIn) Emerald800 else GoldAccent
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = "Copy User ID",
+                                    tint = Slate400,
+                                    modifier = Modifier
+                                        .size(14.dp)
+                                        .clickable {
+                                            clipboardManager.setText(AnnotatedString(displayIdentifier))
+                                            Toast.makeText(
+                                                context,
+                                                if (isBengali) "ইউজার আইডি কপি করা হয়েছে" else "User ID copied to clipboard",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
                                 )
                             }
                         }
                     }
                 }
 
-                HorizontalDivider(color = Slate200, thickness = 1.dp)
+                Spacer(modifier = Modifier.height(16.dp))
 
                 if (isPortalLoggedIn) {
                     OutlinedButton(
                         onClick = { showLogoutConfirmDialog = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = Color(0xFFFEF2F2),
                             contentColor = Color(0xFFDC2626)
@@ -304,7 +357,7 @@ fun AccountScreen(
                         border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFFCA5A5))
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Logout,
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
                             contentDescription = "Logout",
                             tint = Color(0xFFDC2626),
                             modifier = Modifier.size(18.dp)
@@ -313,19 +366,21 @@ fun AccountScreen(
                         Text(
                             text = if (isBengali) "পোর্টাল সেশন থেকে লগআউট করুন" else "Logout from Portal Session",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.5.sp,
+                            fontSize = 14.sp,
                             color = Color(0xFFDC2626)
                         )
                     }
                 } else {
                     Button(
                         onClick = { viewModel.openPortalLoginDialog() },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Emerald800)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF14532D))
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Login,
+                            imageVector = Icons.AutoMirrored.Filled.Login,
                             contentDescription = "Login",
                             modifier = Modifier.size(18.dp),
                             tint = Color.White
@@ -334,7 +389,7 @@ fun AccountScreen(
                         Text(
                             text = if (isBengali) "বাংলারভূমি পোর্টালে লগইন করুন" else "Login to BanglarBhumi Portal",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
+                            fontSize = 14.5.sp,
                             color = Color.White
                         )
                     }
@@ -342,7 +397,7 @@ fun AccountScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         Column(
             modifier = Modifier
@@ -350,47 +405,35 @@ fun AccountScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = null,
-                    tint = Emerald800,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = if (isBengali) "সেটিংস (Settings)" else "Settings",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Slate900
-                )
-            }
+            SettingsSectionHeader(
+                icon = Icons.Default.Tune,
+                title = if (isBengali) "অ্যাকাউন্ট সেটিংস" else "ACCOUNT SETTINGS"
+            )
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0).copy(alpha = 0.7f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-
                     AccountListItem(
                         icon = Icons.Default.VpnKey,
-                        title = if (isBengali) "পোর্টাল ক্রেডেনশিয়ালস:" else "Portal Credentials Cache",
+                        title = if (isBengali) "পোর্টাল ক্রেডেনশিয়ালস ক্যাশে" else "Portal Credentials Cache",
                         subtitle = if (cachedUsername.isNotBlank()) {
                             val namePrefix = if (citizenName.isNotBlank()) "$citizenName • " else ""
-                            if (isBengali) "স্বয়ংক্রিয় লগইন সংরক্ষিত: ${namePrefix}আইডি: $cachedUsername"
-                            else "Auto-fill saved for ${namePrefix}User ID: $cachedUsername"
+                            if (isBengali) "স্বয়ংক্রিয় লগইন সংরক্ষিত: ${namePrefix}ID: $cachedUsername"
+                            else "Auto-fill saved for ${namePrefix}ID: $cachedUsername"
                         } else {
                             if (isBengali) "কোনও তথ্য ক্যাশে সংরক্ষিত নেই" else "No credentials cached"
                         },
                         trailing = {
                             if (cachedUsername.isNotBlank()) {
                                 Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = Color(0xFFFEE2E2),
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = Color(0xFFFEF2F2),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFECACA)),
                                     modifier = Modifier.clickable {
                                         viewModel.clearCachedCredentials()
                                         Toast.makeText(
@@ -402,10 +445,10 @@ fun AccountScreen(
                                 ) {
                                     Text(
                                         text = if (isBengali) "ক্লিয়ার" else "Clear",
-                                        color = Color(0xFFDC2626),
+                                        color = Color(0xFFEF4444),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp)
                                     )
                                 }
                             } else {
@@ -424,12 +467,12 @@ fun AccountScreen(
                         }
                     )
 
-                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 56.dp))
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 70.dp))
 
                     AccountListItem(
-                        icon = Icons.Default.Bookmark,
+                        icon = Icons.Default.BookmarkBorder,
                         title = if (isBengali) "সংরক্ষিত রেকর্ডসমূহ" else "Saved Land Records",
-                        subtitle = if (isBengali) "${savedRecords.size}টি খতিয়ান/দাগ সংরক্ষিত" else "${savedRecords.size} records saved on device",
+                        subtitle = if (isBengali) "${savedRecords.size}টি রেকর্ড ডিভাইসে সংরক্ষিত" else "${savedRecords.size} records saved on local storage",
                         trailing = {
                             Icon(
                                 imageVector = Icons.Default.ChevronRight,
@@ -441,10 +484,10 @@ fun AccountScreen(
                         onClick = onNavigateToSaved
                     )
 
-                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 56.dp))
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 70.dp))
 
                     AccountListItem(
-                        icon = Icons.Default.MenuBook,
+                        icon = Icons.AutoMirrored.Filled.MenuBook,
                         title = if (isBengali) "সিটিজেন নির্দেশিকা ও নিয়মাবলী" else "Citizen Guide & Procedures",
                         subtitle = if (isBengali) "নামজারি, খতিয়ান ও রূপান্তর পদ্ধতি" else "Mutation, RoR & Conversion rules",
                         trailing = {
@@ -461,7 +504,7 @@ fun AccountScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         Column(
             modifier = Modifier
@@ -469,83 +512,81 @@ fun AccountScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Tune,
-                    contentDescription = null,
-                    tint = Emerald800,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = if (isBengali) "পছন্দসমূহ (Preferences)" else "Preferences",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Slate900
-                )
-            }
+            SettingsSectionHeader(
+                icon = Icons.Default.Settings,
+                title = if (isBengali) "পছন্দসমূহ" else "PREFERENCES"
+            )
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0).copy(alpha = 0.7f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-
                     AccountListItem(
                         icon = Icons.Default.Language,
-                        title = if (isBengali) "অ্যাপের ভাষা:" else "App Language",
-                        subtitle = if (isBengali) "বর্তমান ভাষা: বাংলা" else "Current Language: English",
+                        title = if (isBengali) "অ্যাপের ভাষা" else "App Language",
+                        subtitle = if (isBengali) "বর্তমান: বাংলা" else "Current: English",
                         trailing = {
                             Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = Emerald100,
+                                shape = RoundedCornerShape(16.dp),
+                                color = Color(0xFFD1FAE5),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFA7F3D0)),
                                 modifier = Modifier.clickable { viewModel.toggleLanguage() }
                             ) {
                                 Text(
                                     text = if (isBengali) "English এ পরিবর্তন" else "বাংলা করুন",
-                                    color = Emerald800,
-                                    fontSize = 11.5.sp,
+                                    color = Color(0xFF065F46),
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
                                 )
                             }
                         },
                         onClick = { viewModel.toggleLanguage() }
                     )
 
-                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 56.dp))
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 70.dp))
 
                     AccountListItem(
-                        icon = Icons.Default.Sms,
+                        icon = Icons.Default.ChatBubbleOutline,
                         title = if (isBengali) "স্বয়ংক্রিয় SMS OTP সনাক্তকরণ" else "Automatic SMS OTP Detection",
-                        subtitle = if (isBengali) "Play Services SMS User Consent API" else "Play Services SMS User Consent API",
+                        subtitle = if (isBengali) "Play Services SMS Consent API" else "Play Services SMS Consent API",
                         trailing = {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = Emerald100
-                            ) {
-                                Text(
-                                    text = if (isBengali) "সক্রিয়" else "Active",
-                                    color = Emerald800,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                )
-                            }
+                            Switch(
+                                checked = autoSmsConsentEnabled,
+                                onCheckedChange = {
+                                    autoSmsConsentEnabled = it
+                                    Toast.makeText(
+                                        context,
+                                        if (it) (if (isBengali) "SMS সনাক্তকরণ সক্রিয় করা হয়েছে" else "SMS OTP Detection enabled")
+                                        else (if (isBengali) "SMS সনাক্তকরণ নিষ্ক্রিয় করা হয়েছে" else "SMS OTP Detection disabled"),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = Color(0xFF14532D),
+                                    uncheckedThumbColor = Color.White,
+                                    uncheckedTrackColor = Slate300,
+                                    uncheckedBorderColor = Color.Transparent
+                                ),
+                                modifier = Modifier.scale(0.85f)
+                            )
                         },
-                        onClick = {}
+                        onClick = {
+                            autoSmsConsentEnabled = !autoSmsConsentEnabled
+                        }
                     )
 
-                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 56.dp))
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 70.dp))
 
                     AccountListItem(
                         icon = Icons.Default.CleaningServices,
                         title = if (isBengali) "অস্থায়ী ক্যাশে পরিষ্কার করুন" else "Clear Temporary Cache",
-                        subtitle = if (isBengali) "ক্যাপচা এবং অস্থায়ী ডেটা রিসেট" else "Reset captcha & temporary session data",
+                        subtitle = if (isBengali) "ক্যাপচা এবং অস্থায়ী ডেটা রিসেট" else "Reset captcha & temporary sessions",
                         trailing = {
                             Icon(
                                 imageVector = Icons.Default.ChevronRight,
@@ -562,56 +603,105 @@ fun AccountScreen(
                             ).show()
                         }
                     )
+
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 70.dp))
+
+                    AccountListItem(
+                        icon = Icons.Default.Palette,
+                        title = if (isBengali) "ব্র্যান্ড অ্যাকসেন্ট কালার" else "Brand Accent Color",
+                        subtitle = if (isBengali) "ফরেস্ট গ্রিন (ডিফল্ট)" else "Forest Green (Default)",
+                        trailing = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(17.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF15803D)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(10.dp)
+                                    )
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .size(17.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF1D4ED8))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(17.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF0F766E))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(17.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFC2410C))
+                                )
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Icon(
+                                    imageVector = Icons.Default.ChevronRight,
+                                    contentDescription = null,
+                                    tint = Slate400,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        },
+                        onClick = {
+                            Toast.makeText(
+                                context,
+                                if (isBengali) "ফরেস্ট গ্রিন অ্যাক্টিভ রয়েছে" else "Forest Green (Default) is active",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
-        // ─── ABOUT PROJECT SECTION ───
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Info,
-                    contentDescription = null,
-                    tint = Emerald800,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = if (isBengali) "প্রজেক্ট সম্পর্কিত (About Project)" else "About Project",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Slate900
-                )
-            }
+            SettingsSectionHeader(
+                icon = Icons.Default.Info,
+                title = if (isBengali) "প্রজেক্ট সম্পর্কিত" else "ABOUT PROJECT"
+            )
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0).copy(alpha = 0.7f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     AccountListItem(
-                        icon = Icons.Default.NewReleases,
+                        icon = Icons.Default.Verified,
                         title = if (isBengali) "ভার্সন v1.1.0 আপডেট" else "Application Changelog",
-                        subtitle = if (isBengali) "নতুন ফিচার, PDF অপটিমাইজেশন ও বাগ ফিক্স" else "New features, PDF optimizations & bug fixes",
+                        subtitle = if (isBengali) "PDF অপটিমাইজেশন ও বাগ ফিক্স" else "PDF optimizations & bug fixes",
                         trailing = {
                             Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = Emerald100
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFD1FAE5),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFA7F3D0))
                             ) {
                                 Text(
                                     text = "v1.1.0",
-                                    color = Emerald800,
+                                    color = Color(0xFF065F46),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
@@ -621,15 +711,15 @@ fun AccountScreen(
                         onClick = { showAboutProjectDialog = true }
                     )
 
-                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 56.dp))
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 70.dp))
 
                     AccountListItem(
-                        icon = Icons.Default.Business,
+                        icon = Icons.Default.Domain,
                         title = if (isBengali) "ডেভেলপার ও প্রকাশক" else "Developer & Publisher",
                         subtitle = "SumanOnline Web Services",
                         trailing = {
                             Icon(
-                                imageVector = Icons.Default.OpenInNew,
+                                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                                 contentDescription = null,
                                 tint = Slate400,
                                 modifier = Modifier.size(18.dp)
@@ -1395,6 +1485,32 @@ fun AccountScreen(
 }
 
 @Composable
+private fun SettingsSectionHeader(
+    icon: ImageVector,
+    title: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(start = 2.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Emerald800,
+            modifier = Modifier.size(16.dp)
+        )
+        Text(
+            text = title,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = Slate600,
+            letterSpacing = 0.5.sp
+        )
+    }
+}
+
+@Composable
 private fun AccountListItem(
     icon: ImageVector,
     title: String,
@@ -1411,15 +1527,15 @@ private fun AccountListItem(
         horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = Emerald50,
-            modifier = Modifier.size(38.dp)
+            shape = RoundedCornerShape(12.dp),
+            color = Color(0xFFE8F8EE),
+            modifier = Modifier.size(40.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = Emerald800,
+                    tint = Color(0xFF15803D),
                     modifier = Modifier.size(20.dp)
                 )
             }
