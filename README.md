@@ -41,6 +41,22 @@
 
 ---
 
+## 🌟 What's New in Version 1.1.0 (Build 2)
+
+- 📄 **Portal-Grade PDF Export Engine**: Brand-new official government portal layout with West Bengal state emblem, certified header, Mouza & JL details, and print-optimized typography.
+- 👤 **Owner (Rayat) & Duplicate Optimization**: Clean owner name display on Line 1 with purple `ব্যক্তি` badge on Line 2, eliminating duplicate tagging.
+- 🔢 **Serial Number (S/N) Column**: Dedicated serial column preceding Plot / Dag numbers in exported PDF records.
+- 🏛️ **Dedicated Project & Legal Pages**:
+  - **About Project**: Complete build specifications, app identity, signing certificate SHA-1 credentials, and changelog.
+  - **SumanOnline Projects**: Showcase of the digital ecosystem (BanglarBhumi Pro, HisabKhata PRO, Mouza Directory Engine, SumanOnline Web Services) with native Android specification cards.
+  - **Privacy Policy**: DPDP Act 2023 compliance, device-sandboxed storage, zero data-selling, and SMS Consent API details.
+  - **Terms & Conditions**: Citizen accessibility guidelines, independent tool disclaimer, and certified copies notice.
+  - **Contact Us**: Interactive direct support channels (`support@sumanonline.com`, `https://sumanonline.com`), support topics, and SLA operating hours.
+- 🧮 **Optimized Land Unit Converter**: Compact Area Value field with inline Bengal standard units (Satak, Katha, Bigha, Chatak, Acre, etc.), quick presets, and 1-tap clipboard copying.
+- 🎨 **Adaptive TopAppBar & Back Navigation**: Dynamic header updating title, tagline, and back button per sub-screen with full Bengali and English localization.
+
+---
+
 ## 🏗️ Architecture & Tech Stack
 
 The application follows the recommended Android **Modern Architecture (MVI/MVVM)** and **Clean Repository Pattern**:
