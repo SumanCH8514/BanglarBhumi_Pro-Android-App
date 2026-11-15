@@ -18,6 +18,10 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Hub
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -287,25 +291,38 @@ fun ProjectsScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                TechItem(
-                    label = if (isBengali) "আধুনিক আর্কিটেকচার" else "Modern Architecture",
-                    detail = "MVI / MVVM + Clean Outbox + Repository Pattern"
-                )
-                TechItem(
-                    label = if (isBengali) "ইউজার ইন্টারফেস" else "UI Toolkit",
-                    detail = "Jetpack Compose + Material 3 Design System"
-                )
-                TechItem(
-                    label = if (isBengali) "নিরাপত্তা ও গোপনীয়তা" else "Security & Privacy",
-                    detail = "Zero-Tracker Sandbox, Safe Local Storage, HTTPS Only"
-                )
-                TechItem(
-                    label = if (isBengali) "প্রধান প্রকৌশলী" else "Lead Engineer",
-                    detail = "Suman Chakrabortty (SumanOnline Web Services)",
-                    isLast = true
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    TechItem(
+                        icon = Icons.Default.Layers,
+                        iconTint = Emerald800,
+                        iconBg = Color(0xFFECFDF5),
+                        label = if (isBengali) "আধুনিক আর্কিটেকচার" else "Modern Architecture",
+                        detail = "MVI / MVVM + Clean Outbox + Repository Pattern"
+                    )
+                    TechItem(
+                        icon = Icons.Default.Widgets,
+                        iconTint = Color(0xFF1D4ED8),
+                        iconBg = Color(0xFFEFF6FF),
+                        label = if (isBengali) "ইউজার ইন্টারফেস" else "UI Toolkit",
+                        detail = "Jetpack Compose + Material 3 Design System"
+                    )
+                    TechItem(
+                        icon = Icons.Default.Security,
+                        iconTint = Color(0xFF7C3AED),
+                        iconBg = Color(0xFFF5F3FF),
+                        label = if (isBengali) "নিরাপত্তা ও গোপনীয়তা" else "Security & Privacy",
+                        detail = "Zero-Tracker Sandbox, Safe Local Storage, HTTPS Only"
+                    )
+                    TechItem(
+                        icon = Icons.Default.Person,
+                        iconTint = Color(0xFFC2410C),
+                        iconBg = Color(0xFFFFF7ED),
+                        label = if (isBengali) "প্রধান প্রকৌশলী" else "Lead Engineer",
+                        detail = "Suman Chakrabortty (SumanOnline Web Services)"
+                    )
+                }
             }
         }
 
@@ -403,29 +420,55 @@ private fun ProjectEntry(
 
 @Composable
 private fun TechItem(
+    icon: ImageVector,
+    iconTint: Color,
+    iconBg: Color,
     label: String,
-    detail: String,
-    isLast: Boolean = false
+    detail: String
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.5.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFFF8FAFC),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Text(
-            text = label,
-            fontSize = 12.5.sp,
-            color = Slate500,
-            fontWeight = FontWeight.Medium
-        )
-        Text(
-            text = detail,
-            fontSize = 12.5.sp,
-            color = Slate900,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.End
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = iconBg,
+                modifier = Modifier.size(34.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconTint,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Slate500
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = detail,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Slate900,
+                    lineHeight = 17.5.sp
+                )
+            }
+        }
     }
 }
