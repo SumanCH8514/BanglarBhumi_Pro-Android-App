@@ -64,6 +64,7 @@ fun AccountScreen(
     var showLogoutConfirmDialog by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }
     var showAboutProjectDialog by remember { mutableStateOf(false) }
+    var showAboutProjectScreen by remember { mutableStateOf(false) }
     var editNameText by remember { mutableStateOf("") }
     var autoSmsConsentEnabled by remember { mutableStateOf(true) }
 
@@ -104,6 +105,14 @@ fun AccountScreen(
         } else {
             if (isBengali) "অতিথি নাগরিক" else "Guest Citizen"
         }
+    }
+
+    if (showAboutProjectScreen) {
+        AboutProjectScreen(
+            viewModel = viewModel,
+            onBack = { showAboutProjectScreen = false }
+        )
+        return
     }
 
     Column(
@@ -694,25 +703,36 @@ fun AccountScreen(
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     AccountListItem(
-                        icon = Icons.Default.Verified,
-                        title = if (isBengali) "ভার্সন v1.1.0 আপডেট" else "Application Changelog",
-                        subtitle = if (isBengali) "PDF অপটিমাইজেশন ও বাগ ফিক্স" else "PDF optimizations & bug fixes",
+                        icon = Icons.Default.Info,
+                        title = if (isBengali) "প্রজেক্ট সম্পর্কিত তথ্য" else "About Project",
+                        subtitle = if (isBengali) "ভার্সন বিবরণ, স্পেক্স ও চেঞ্জলগ" else "Version details, specs & changelog",
                         trailing = {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = Color(0xFFD1FAE5),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFA7F3D0))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
-                                Text(
-                                    text = "v1.1.0",
-                                    color = Color(0xFF065F46),
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = Color(0xFFD1FAE5),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFA7F3D0))
+                                ) {
+                                    Text(
+                                        text = "v1.1.0",
+                                        color = Color(0xFF065F46),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    )
+                                }
+                                Icon(
+                                    imageVector = Icons.Default.ChevronRight,
+                                    contentDescription = null,
+                                    tint = Slate400,
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         },
-                        onClick = { showAboutProjectDialog = true }
+                        onClick = { showAboutProjectScreen = true }
                     )
 
                     HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 58.dp))
