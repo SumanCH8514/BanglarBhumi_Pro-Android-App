@@ -173,41 +173,44 @@ fun LandCalculatorScreen(viewModel: MainViewModel) {
                     }
                 }
 
-                // Two inputs: Area Value and Unit Dropdown
+                // Two inputs: Area Value (compact) and Unit Dropdown (appropriately positioned)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedTextField(
                         value = inputValue,
                         onValueChange = { inputValue = it },
-                        label = { Text(if (isBengali) "জমির পরিমাণ" else "Area Value") },
+                        label = { Text(if (isBengali) "জমির পরিমাণ" else "Area Value", maxLines = 1) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Emerald600,
                             unfocusedBorderColor = Slate300
                         ),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(0.72f)
                     )
 
                     ExposedDropdownMenuBox(
                         expanded = unitMenuExpanded,
                         onExpandedChange = { unitMenuExpanded = !unitMenuExpanded },
-                        modifier = Modifier.weight(1.3f)
+                        modifier = Modifier.weight(1.28f)
                     ) {
                         OutlinedTextField(
                             value = if (isBengali) selectedUnit.bn else selectedUnit.en,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text(if (isBengali) "একক" else "Unit") },
+                            singleLine = true,
+                            label = { Text(if (isBengali) "একক" else "Unit", maxLines = 1) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitMenuExpanded) },
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Emerald600,
                                 unfocusedBorderColor = Slate300
                             ),
+                            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .menuAnchor()
