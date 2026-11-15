@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.banglarbhumi.pro.ui.components.PortalLoginDialog
 import com.banglarbhumi.pro.ui.screens.*
 import com.banglarbhumi.pro.ui.theme.*
+import com.banglarbhumi.pro.ui.viewmodel.AccountSubScreen
 import com.banglarbhumi.pro.ui.viewmodel.MainViewModel
 
 enum class NavigationTab(
@@ -65,14 +66,14 @@ fun MainAppContainer(viewModel: MainViewModel) {
     val isBengali by viewModel.isBengali.collectAsState()
     val searchResult by viewModel.searchResult.collectAsState()
     val showPortalLoginDialog by viewModel.showPortalLoginDialog.collectAsState()
-    val showAboutProjectScreen by viewModel.showAboutProjectScreen.collectAsState()
-    val isAboutScreenActive = showAboutProjectScreen && currentTab == NavigationTab.ACCOUNT
+    val currentAccountSubScreen by viewModel.currentAccountSubScreen.collectAsState()
+    val isSubScreenActive = currentAccountSubScreen != AccountSubScreen.NONE && currentTab == NavigationTab.ACCOUNT
 
-    BackHandler(enabled = searchResult != null || isAboutScreenActive || currentTab != NavigationTab.SEARCH) {
+    BackHandler(enabled = searchResult != null || isSubScreenActive || currentTab != NavigationTab.SEARCH) {
         if (searchResult != null) {
             viewModel.clearSearchResult()
-        } else if (isAboutScreenActive) {
-            viewModel.setShowAboutProjectScreen(false)
+        } else if (isSubScreenActive) {
+            viewModel.closeAccountSubScreen()
         } else if (currentTab != NavigationTab.SEARCH) {
             currentTab = NavigationTab.SEARCH
         }
@@ -86,9 +87,9 @@ fun MainAppContainer(viewModel: MainViewModel) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        if (isAboutScreenActive) {
+                        if (isSubScreenActive) {
                             IconButton(
-                                onClick = { viewModel.setShowAboutProjectScreen(false) },
+                                onClick = { viewModel.closeAccountSubScreen() },
                                 modifier = Modifier.size(36.dp)
                             ) {
                                 Icon(
@@ -117,23 +118,34 @@ fun MainAppContainer(viewModel: MainViewModel) {
                             }
                         }
                         Column(verticalArrangement = Arrangement.Center) {
+                            val headerTitle = when {
+                                !isSubScreenActive -> if (isBengali) "বাংলারভূমি প্রো" else "BanglarBhumi Pro"
+                                currentAccountSubScreen == AccountSubScreen.ABOUT_PROJECT -> if (isBengali) "প্রজেক্ট সম্পর্কিত তথ্য" else "About Project"
+                                currentAccountSubScreen == AccountSubScreen.PROJECTS -> if (isBengali) "সুমনঅনলাইন প্রজেক্টস" else "SumanOnline Projects"
+                                currentAccountSubScreen == AccountSubScreen.PRIVACY_POLICY -> if (isBengali) "গোপনীয়তা নীতি" else "Privacy Policy"
+                                currentAccountSubScreen == AccountSubScreen.TERMS_CONDITIONS -> if (isBengali) "শর্তাবলী ও নিয়মাবলী" else "Terms & Conditions"
+                                currentAccountSubScreen == AccountSubScreen.CONTACT_US -> if (isBengali) "যোগাযোগ করুন" else "Contact Us"
+                                else -> if (isBengali) "বাংলারভূমি প্রো" else "BanglarBhumi Pro"
+                            }
+                            val headerTagline = when {
+                                !isSubScreenActive -> "A SumanOnline Project"
+                                currentAccountSubScreen == AccountSubScreen.ABOUT_PROJECT -> "BanglarBhumi PRO • SumanOnline"
+                                currentAccountSubScreen == AccountSubScreen.PROJECTS -> "Official Digital Ecosystem"
+                                currentAccountSubScreen == AccountSubScreen.PRIVACY_POLICY -> "Data Protection & Security"
+                                currentAccountSubScreen == AccountSubScreen.TERMS_CONDITIONS -> "Citizen Service Guidelines"
+                                currentAccountSubScreen == AccountSubScreen.CONTACT_US -> "Support & Inquiries"
+                                else -> "A SumanOnline Project"
+                            }
+
                             Text(
-                                text = if (isAboutScreenActive) {
-                                    if (isBengali) "প্রজেক্ট সম্পর্কিত তথ্য" else "About Project"
-                                } else {
-                                    if (isBengali) "বাংলারভূমি প্রো" else "BanglarBhumi Pro"
-                                },
+                                text = headerTitle,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 17.sp,
                                 color = Color.White,
                                 lineHeight = 19.sp
                             )
                             Text(
-                                text = if (isAboutScreenActive) {
-                                    "BanglarBhumi PRO • SumanOnline"
-                                } else {
-                                    "A SumanOnline Project"
-                                },
+                                text = headerTagline,
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 10.5.sp,
                                 color = Color.White.copy(alpha = 0.88f),

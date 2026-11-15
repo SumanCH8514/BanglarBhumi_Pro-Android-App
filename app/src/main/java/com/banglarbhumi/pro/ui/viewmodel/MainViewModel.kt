@@ -23,6 +23,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+enum class AccountSubScreen {
+    NONE,
+    ABOUT_PROJECT,
+    PROJECTS,
+    PRIVACY_POLICY,
+    TERMS_CONDITIONS,
+    CONTACT_US
+}
+
 enum class PortalLoginStep {
     CREDENTIALS_AND_CAPTCHA,
     OTP_VERIFICATION
@@ -96,11 +105,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _showPortalLoginDialog = MutableStateFlow(false)
     val showPortalLoginDialog: StateFlow<Boolean> = _showPortalLoginDialog.asStateFlow()
 
+    private val _currentAccountSubScreen = MutableStateFlow(AccountSubScreen.NONE)
+    val currentAccountSubScreen: StateFlow<AccountSubScreen> = _currentAccountSubScreen.asStateFlow()
+
     private val _showAboutProjectScreen = MutableStateFlow(false)
     val showAboutProjectScreen: StateFlow<Boolean> = _showAboutProjectScreen.asStateFlow()
 
+    fun navigateToAccountSubScreen(subScreen: AccountSubScreen) {
+        _currentAccountSubScreen.value = subScreen
+        _showAboutProjectScreen.value = (subScreen == AccountSubScreen.ABOUT_PROJECT)
+    }
+
+    fun closeAccountSubScreen() {
+        _currentAccountSubScreen.value = AccountSubScreen.NONE
+        _showAboutProjectScreen.value = false
+    }
+
     fun setShowAboutProjectScreen(show: Boolean) {
         _showAboutProjectScreen.value = show
+        _currentAccountSubScreen.value = if (show) AccountSubScreen.ABOUT_PROJECT else AccountSubScreen.NONE
     }
 
     private val _portalLoginStep = MutableStateFlow(PortalLoginStep.CREDENTIALS_AND_CAPTCHA)
