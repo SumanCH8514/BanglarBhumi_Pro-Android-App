@@ -35,6 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.banglarbhumi.pro.R
@@ -115,10 +116,10 @@ fun AccountScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            shape = RoundedCornerShape(20.dp),
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -131,25 +132,25 @@ fun AccountScreen(
                             )
                         )
                     )
-                    .padding(20.dp)
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Surface(
                         shape = CircleShape,
                         color = Color.White,
-                        shadowElevation = 3.dp,
-                        modifier = Modifier.size(52.dp)
+                        shadowElevation = 2.dp,
+                        modifier = Modifier.size(46.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Image(
                                 painter = painterResource(id = R.drawable.app_logo),
                                 contentDescription = "Logo",
                                 modifier = Modifier
-                                    .size(44.dp)
+                                    .size(38.dp)
                                     .clip(CircleShape)
                             )
                         }
@@ -158,14 +159,14 @@ fun AccountScreen(
                     Column {
                         Text(
                             text = if (isBengali) "অ্যাকাউন্ট ও সেটিংস" else "Account & Settings",
-                            fontSize = 20.sp,
+                            fontSize = 17.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(1.dp))
                         Text(
                             text = "A SumanOnline Project",
-                            fontSize = 12.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color.White.copy(alpha = 0.88f)
                         )
@@ -178,7 +179,7 @@ fun AccountScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(22.dp),
+            shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0).copy(alpha = 0.8f)),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -186,19 +187,19 @@ fun AccountScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(18.dp)
+                    .padding(14.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Box(
-                        modifier = Modifier.size(62.dp)
+                        modifier = Modifier.size(54.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(58.dp)
+                                .size(50.dp)
                                 .clip(CircleShape)
                                 .background(Color(0xFFDCFCE7))
                                 .border(1.5.dp, Color(0xFF86EFAC), CircleShape),
@@ -208,13 +209,13 @@ fun AccountScreen(
                                 imageVector = Icons.Default.Person,
                                 contentDescription = "Profile Picture",
                                 tint = Color(0xFF15803D),
-                                modifier = Modifier.size(36.dp)
+                                modifier = Modifier.size(30.dp)
                             )
                         }
 
                         Box(
                             modifier = Modifier
-                                .size(20.dp)
+                                .size(18.dp)
                                 .align(Alignment.BottomEnd)
                                 .clip(CircleShape)
                                 .background(Color(0xFF14532D))
@@ -232,36 +233,39 @@ fun AccountScreen(
                                 imageVector = Icons.Default.PhotoCamera,
                                 contentDescription = "Change Photo",
                                 tint = Color.White,
-                                modifier = Modifier.size(11.dp)
+                                modifier = Modifier.size(10.dp)
                             )
                         }
                     }
 
                     Column(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(5.dp),
                                 modifier = Modifier.weight(1f, fill = false)
                             ) {
                                 Text(
                                     text = displayCitizenName,
-                                    fontSize = 17.5.sp,
+                                    fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Slate900
+                                    color = Slate900,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Icon(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = "Edit Name",
                                     tint = Slate400,
                                     modifier = Modifier
-                                        .size(15.dp)
+                                        .size(14.dp)
                                         .clickable {
                                             editNameText = citizenName
                                             showEditNameDialog = true
@@ -269,10 +273,8 @@ fun AccountScreen(
                                 )
                             }
 
-                            Spacer(modifier = Modifier.weight(1f))
-
                             Surface(
-                                shape = RoundedCornerShape(20.dp),
+                                shape = RoundedCornerShape(16.dp),
                                 color = if (isPortalLoggedIn) Color(0xFFDCFCE7) else Color(0xFFFEF3C7),
                                 border = androidx.compose.foundation.BorderStroke(
                                     1.dp,
@@ -280,15 +282,15 @@ fun AccountScreen(
                                 )
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.5.dp),
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
                                 ) {
                                     Icon(
                                         imageVector = if (isPortalLoggedIn) Icons.Default.CheckCircle else Icons.Default.LinkOff,
                                         contentDescription = null,
                                         tint = if (isPortalLoggedIn) Color(0xFF15803D) else Color(0xFFB45309),
-                                        modifier = Modifier.size(12.dp)
+                                        modifier = Modifier.size(11.dp)
                                     )
                                     Text(
                                         text = if (isPortalLoggedIn) {
@@ -296,7 +298,7 @@ fun AccountScreen(
                                         } else {
                                             if (isBengali) "ডিসকানেক্টেড" else "Disconnected"
                                         },
-                                        fontSize = 11.sp,
+                                        fontSize = 10.5.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = if (isPortalLoggedIn) Color(0xFF15803D) else Color(0xFFB45309)
                                     )
@@ -306,19 +308,21 @@ fun AccountScreen(
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
                                 text = if (isBengali) "ইউজার আইডি: " else "User ID: ",
-                                fontSize = 13.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = Slate500
                             )
                             Text(
                                 text = if (displayIdentifier.isNotBlank()) displayIdentifier else (if (isBengali) "পোর্টালে লগইন নেই" else "Not Available"),
-                                fontSize = 13.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Slate800
+                                color = Slate800,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             if (displayIdentifier.isNotBlank()) {
                                 Icon(
@@ -326,7 +330,7 @@ fun AccountScreen(
                                     contentDescription = "Copy User ID",
                                     tint = Slate400,
                                     modifier = Modifier
-                                        .size(14.dp)
+                                        .size(13.dp)
                                         .clickable {
                                             clipboardManager.setText(AnnotatedString(displayIdentifier))
                                             Toast.makeText(
@@ -341,32 +345,32 @@ fun AccountScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(13.dp))
 
                 if (isPortalLoggedIn) {
                     OutlinedButton(
                         onClick = { showLogoutConfirmDialog = true },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(14.dp),
+                            .height(42.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = Color(0xFFFEF2F2),
                             contentColor = Color(0xFFDC2626)
                         ),
-                        border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFFCA5A5))
+                        border = androidx.compose.foundation.BorderStroke(1.2.dp, Color(0xFFFCA5A5))
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Logout,
                             contentDescription = "Logout",
                             tint = Color(0xFFDC2626),
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = if (isBengali) "পোর্টাল সেশন থেকে লগআউট করুন" else "Logout from Portal Session",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             color = Color(0xFFDC2626)
                         )
                     }
@@ -375,21 +379,21 @@ fun AccountScreen(
                         onClick = { viewModel.openPortalLoginDialog() },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(14.dp),
+                            .height(42.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF14532D))
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Login,
                             contentDescription = "Login",
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(16.dp),
                             tint = Color.White
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = if (isBengali) "বাংলারভূমি পোর্টালে লগইন করুন" else "Login to BanglarBhumi Portal",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.5.sp,
+                            fontSize = 13.5.sp,
                             color = Color.White
                         )
                     }
@@ -397,13 +401,13 @@ fun AccountScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(13.dp))
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             SettingsSectionHeader(
                 icon = Icons.Default.Tune,
@@ -412,10 +416,10 @@ fun AccountScreen(
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0).copy(alpha = 0.7f)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     AccountListItem(
@@ -423,7 +427,7 @@ fun AccountScreen(
                         title = if (isBengali) "পোর্টাল ক্রেডেনশিয়ালস ক্যাশে" else "Portal Credentials Cache",
                         subtitle = if (cachedUsername.isNotBlank()) {
                             val namePrefix = if (citizenName.isNotBlank()) "$citizenName • " else ""
-                            if (isBengali) "স্বয়ংক্রিয় লগইন সংরক্ষিত: ${namePrefix}ID: $cachedUsername"
+                            if (isBengali) "সংরক্ষিত আইডি: ${namePrefix}$cachedUsername"
                             else "Auto-fill saved for ${namePrefix}ID: $cachedUsername"
                         } else {
                             if (isBengali) "কোনও তথ্য ক্যাশে সংরক্ষিত নেই" else "No credentials cached"
@@ -431,7 +435,7 @@ fun AccountScreen(
                         trailing = {
                             if (cachedUsername.isNotBlank()) {
                                 Surface(
-                                    shape = RoundedCornerShape(16.dp),
+                                    shape = RoundedCornerShape(14.dp),
                                     color = Color(0xFFFEF2F2),
                                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFECACA)),
                                     modifier = Modifier.clickable {
@@ -446,9 +450,9 @@ fun AccountScreen(
                                     Text(
                                         text = if (isBengali) "ক্লিয়ার" else "Clear",
                                         color = Color(0xFFEF4444),
-                                        fontSize = 12.sp,
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp)
+                                        modifier = Modifier.padding(horizontal = 11.dp, vertical = 4.dp)
                                     )
                                 }
                             } else {
@@ -456,7 +460,7 @@ fun AccountScreen(
                                     imageVector = Icons.Default.ChevronRight,
                                     contentDescription = null,
                                     tint = Slate400,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         },
@@ -467,7 +471,7 @@ fun AccountScreen(
                         }
                     )
 
-                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 70.dp))
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 58.dp))
 
                     AccountListItem(
                         icon = Icons.Default.BookmarkBorder,
@@ -478,13 +482,13 @@ fun AccountScreen(
                                 imageVector = Icons.Default.ChevronRight,
                                 contentDescription = null,
                                 tint = Slate400,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         },
                         onClick = onNavigateToSaved
                     )
 
-                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 70.dp))
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 58.dp))
 
                     AccountListItem(
                         icon = Icons.AutoMirrored.Filled.MenuBook,
@@ -495,7 +499,7 @@ fun AccountScreen(
                                 imageVector = Icons.Default.ChevronRight,
                                 contentDescription = null,
                                 tint = Slate400,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         },
                         onClick = { showGuideDialog = true }
@@ -504,13 +508,13 @@ fun AccountScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(13.dp))
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             SettingsSectionHeader(
                 icon = Icons.Default.Settings,
@@ -519,10 +523,10 @@ fun AccountScreen(
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0).copy(alpha = 0.7f)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     AccountListItem(
@@ -531,7 +535,7 @@ fun AccountScreen(
                         subtitle = if (isBengali) "বর্তমান: বাংলা" else "Current: English",
                         trailing = {
                             Surface(
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(14.dp),
                                 color = Color(0xFFD1FAE5),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFA7F3D0)),
                                 modifier = Modifier.clickable { viewModel.toggleLanguage() }
@@ -539,16 +543,16 @@ fun AccountScreen(
                                 Text(
                                     text = if (isBengali) "English এ পরিবর্তন" else "বাংলা করুন",
                                     color = Color(0xFF065F46),
-                                    fontSize = 12.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                 )
                             }
                         },
                         onClick = { viewModel.toggleLanguage() }
                     )
 
-                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 70.dp))
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 58.dp))
 
                     AccountListItem(
                         icon = Icons.Default.ChatBubbleOutline,
@@ -573,7 +577,7 @@ fun AccountScreen(
                                     uncheckedTrackColor = Slate300,
                                     uncheckedBorderColor = Color.Transparent
                                 ),
-                                modifier = Modifier.scale(0.85f)
+                                modifier = Modifier.scale(0.75f)
                             )
                         },
                         onClick = {
@@ -581,7 +585,7 @@ fun AccountScreen(
                         }
                     )
 
-                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 70.dp))
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 58.dp))
 
                     AccountListItem(
                         icon = Icons.Default.CleaningServices,
@@ -592,7 +596,7 @@ fun AccountScreen(
                                 imageVector = Icons.Default.ChevronRight,
                                 contentDescription = null,
                                 tint = Slate400,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         },
                         onClick = {
@@ -604,7 +608,7 @@ fun AccountScreen(
                         }
                     )
 
-                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 70.dp))
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 58.dp))
 
                     AccountListItem(
                         icon = Icons.Default.Palette,
@@ -613,11 +617,11 @@ fun AccountScreen(
                         trailing = {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(17.dp)
+                                        .size(15.dp)
                                         .clip(CircleShape)
                                         .background(Color(0xFF15803D)),
                                     contentAlignment = Alignment.Center
@@ -626,24 +630,24 @@ fun AccountScreen(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = null,
                                         tint = Color.White,
-                                        modifier = Modifier.size(10.dp)
+                                        modifier = Modifier.size(9.dp)
                                     )
                                 }
                                 Box(
                                     modifier = Modifier
-                                        .size(17.dp)
+                                        .size(15.dp)
                                         .clip(CircleShape)
                                         .background(Color(0xFF1D4ED8))
                                 )
                                 Box(
                                     modifier = Modifier
-                                        .size(17.dp)
+                                        .size(15.dp)
                                         .clip(CircleShape)
                                         .background(Color(0xFF0F766E))
                                 )
                                 Box(
                                     modifier = Modifier
-                                        .size(17.dp)
+                                        .size(15.dp)
                                         .clip(CircleShape)
                                         .background(Color(0xFFC2410C))
                                 )
@@ -652,7 +656,7 @@ fun AccountScreen(
                                     imageVector = Icons.Default.ChevronRight,
                                     contentDescription = null,
                                     tint = Slate400,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         },
@@ -668,13 +672,13 @@ fun AccountScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(13.dp))
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             SettingsSectionHeader(
                 icon = Icons.Default.Info,
@@ -683,10 +687,10 @@ fun AccountScreen(
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0).copy(alpha = 0.7f)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     AccountListItem(
@@ -695,23 +699,23 @@ fun AccountScreen(
                         subtitle = if (isBengali) "PDF অপটিমাইজেশন ও বাগ ফিক্স" else "PDF optimizations & bug fixes",
                         trailing = {
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(10.dp),
                                 color = Color(0xFFD1FAE5),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFA7F3D0))
                             ) {
                                 Text(
                                     text = "v1.1.0",
                                     color = Color(0xFF065F46),
-                                    fontSize = 12.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                 )
                             }
                         },
                         onClick = { showAboutProjectDialog = true }
                     )
 
-                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 70.dp))
+                    HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 58.dp))
 
                     AccountListItem(
                         icon = Icons.Default.Domain,
@@ -722,7 +726,7 @@ fun AccountScreen(
                                 imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                                 contentDescription = null,
                                 tint = Slate400,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         },
                         onClick = {
@@ -736,28 +740,27 @@ fun AccountScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-
             Surface(
                 shape = CircleShape,
                 color = Color.White,
-                shadowElevation = 2.dp,
-                modifier = Modifier.size(52.dp)
+                shadowElevation = 1.5.dp,
+                modifier = Modifier.size(44.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Image(
                         painter = painterResource(id = R.drawable.app_logo),
                         contentDescription = "Logo",
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(36.dp)
                             .clip(CircleShape)
                     )
                 }
@@ -770,20 +773,20 @@ fun AccountScreen(
                 Text(
                     text = "BanglarBhumi Pro",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.5.sp,
+                    fontSize = 14.5.sp,
                     color = Slate800
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(5.dp),
                     color = Slate200
                 ) {
                     Text(
                         text = "v$versionName",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 11.5.sp,
+                        fontSize = 11.sp,
                         color = Slate700,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                     )
                 }
             }
@@ -791,11 +794,11 @@ fun AccountScreen(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(top = 2.dp)
+                modifier = Modifier.padding(top = 1.dp)
             ) {
                 Text(
                     text = "Privacy policy",
-                    fontSize = 12.sp,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Emerald800,
                     modifier = Modifier
@@ -806,14 +809,14 @@ fun AccountScreen(
 
                 Text(
                     text = "|",
-                    fontSize = 12.sp,
+                    fontSize = 11.5.sp,
                     color = Slate400,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
 
                 Text(
                     text = "terms and conditions",
-                    fontSize = 12.sp,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Emerald800,
                     modifier = Modifier
@@ -824,14 +827,14 @@ fun AccountScreen(
 
                 Text(
                     text = "|",
-                    fontSize = 12.sp,
+                    fontSize = 11.5.sp,
                     color = Slate400,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
 
                 Text(
                     text = "contact us",
-                    fontSize = 12.sp,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Emerald800,
                     modifier = Modifier
@@ -843,7 +846,7 @@ fun AccountScreen(
 
             Text(
                 text = "© $dynamicYear SumanOnline Web Services.",
-                fontSize = 11.sp,
+                fontSize = 10.5.sp,
                 fontWeight = FontWeight.Medium,
                 color = Slate500,
                 textAlign = TextAlign.Center
@@ -1491,18 +1494,18 @@ private fun SettingsSectionHeader(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier.padding(start = 2.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             tint = Emerald800,
-            modifier = Modifier.size(16.dp)
+            modifier = Modifier.size(14.dp)
         )
         Text(
             text = title,
-            fontSize = 12.5.sp,
+            fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold,
             color = Slate600,
             letterSpacing = 0.5.sp
@@ -1522,21 +1525,21 @@ private fun AccountListItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 14.dp, vertical = 9.5.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(10.dp),
             color = Color(0xFFE8F8EE),
-            modifier = Modifier.size(40.dp)
+            modifier = Modifier.size(35.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     tint = Color(0xFF15803D),
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
@@ -1544,15 +1547,19 @@ private fun AccountListItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                fontSize = 14.5.sp,
+                fontSize = 13.5.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Slate900
+                color = Slate900,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(1.dp))
             Text(
                 text = subtitle,
-                fontSize = 12.sp,
-                color = Slate500
+                fontSize = 11.5.sp,
+                color = Slate500,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
 
