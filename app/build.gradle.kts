@@ -9,7 +9,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.banglarbhumi.pro"
+        applicationId = "com.sumanonline.banglarbhumipro"
         minSdk = 26
         targetSdk = 35
         versionCode = 2

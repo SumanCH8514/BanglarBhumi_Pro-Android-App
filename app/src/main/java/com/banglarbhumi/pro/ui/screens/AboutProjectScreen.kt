@@ -14,8 +14,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.*
@@ -57,53 +57,8 @@ fun AboutProjectScreen(
             .fillMaxSize()
             .background(Color(0xFFF8FAFC))
             .verticalScroll(rememberScrollState())
-            .padding(bottom = 32.dp)
+            .padding(top = 10.dp, bottom = 32.dp)
     ) {
-        // Top Sub-Header / Back Affordance
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = Color.White,
-                shadowElevation = 1.dp,
-                border = BorderStroke(1.dp, Slate200),
-                modifier = Modifier
-                    .size(36.dp)
-                    .clickable(onClick = onBack)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Emerald800,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column {
-                Text(
-                    text = if (isBengali) "প্রজেক্ট সম্পর্কিত তথ্য" else "About Project",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Slate900
-                )
-                Text(
-                    text = "BanglarBhumi PRO • SumanOnline",
-                    fontSize = 11.5.sp,
-                    color = Slate500
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
         // CARD 1: HERO APP CARD
         Card(
             modifier = Modifier
@@ -324,74 +279,165 @@ fun AboutProjectScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Package Name",
-                        fontSize = 13.sp,
-                        color = Slate500,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = "com.banglarbhumi.pro",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Slate900
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "Active Signing SHA-1:",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Slate700
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                val sha1String = "24:9F:4C:0B:1B:96:9D:C1:30:03:C5:61:AC:DE:FC:F9:1E:7D:7A:4E"
+                // PACKAGE NAME CONTAINER
+                val appPackageName = context.packageName.ifBlank { "com.sumanonline.banglarbhumipro" }
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
                     color = Color(0xFFF8FAFC),
                     border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 11.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = sha1String,
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = FontFamily.Monospace,
-                            color = Slate800,
-                            lineHeight = 17.sp,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "COPY",
-                            color = Color(0xFF0D9488),
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.ExtraBold,
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Package Name",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Slate500
+                            )
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                text = appPackageName,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                color = Slate900
+                            )
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFE6FFFA),
+                            border = BorderStroke(1.dp, Color(0xFF99F6E4)),
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .clickable {
-                                    clipboardManager.setText(AnnotatedString(sha1String))
+                                    clipboardManager.setText(AnnotatedString(appPackageName))
                                     Toast.makeText(
                                         context,
-                                        if (isBengali) "SHA-1 ক্লিপবোর্ডে কপি করা হয়েছে" else "SHA-1 fingerprint copied to clipboard",
+                                        if (isBengali) "প্যাকেজ নেম কপি করা হয়েছে" else "Package name copied to clipboard",
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
-                                .padding(horizontal = 6.dp, vertical = 4.dp)
-                        )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = null,
+                                    tint = Color(0xFF0D9488),
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "COPY",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0D9488)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // ACTIVE SIGNING SHA-1 CONTAINER
+                val sha1String = "24:9F:4C:0B:1B:96:9D:C1:30:03:C5:61:AC:DE:FC:F9:1E:7D:7A:4E"
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFF8FAFC),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(7.5.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF10B981))
+                                )
+                                Text(
+                                    text = "Active Signing SHA-1",
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Slate800
+                                )
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFFE6FFFA),
+                                border = BorderStroke(1.dp, Color(0xFF99F6E4)),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        clipboardManager.setText(AnnotatedString(sha1String))
+                                        Toast.makeText(
+                                            context,
+                                            if (isBengali) "SHA-1 ক্লিপবোর্ডে কপি করা হয়েছে" else "SHA-1 fingerprint copied to clipboard",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ContentCopy,
+                                        contentDescription = null,
+                                        tint = Color(0xFF0D9488),
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "COPY",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF0D9488)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color.White,
+                            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = sha1String,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = FontFamily.Monospace,
+                                color = Slate800,
+                                lineHeight = 19.sp,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                            )
+                        }
                     }
                 }
             }

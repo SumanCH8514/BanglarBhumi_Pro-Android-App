@@ -64,7 +64,7 @@ fun AccountScreen(
     var showLogoutConfirmDialog by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }
     var showAboutProjectDialog by remember { mutableStateOf(false) }
-    var showAboutProjectScreen by remember { mutableStateOf(false) }
+    val showAboutProjectScreen by viewModel.showAboutProjectScreen.collectAsState()
     var editNameText by remember { mutableStateOf("") }
     var autoSmsConsentEnabled by remember { mutableStateOf(true) }
 
@@ -110,7 +110,7 @@ fun AccountScreen(
     if (showAboutProjectScreen) {
         AboutProjectScreen(
             viewModel = viewModel,
-            onBack = { showAboutProjectScreen = false }
+            onBack = { viewModel.setShowAboutProjectScreen(false) }
         )
         return
     }
@@ -732,7 +732,7 @@ fun AccountScreen(
                                 )
                             }
                         },
-                        onClick = { showAboutProjectScreen = true }
+                        onClick = { viewModel.setShowAboutProjectScreen(true) }
                     )
 
                     HorizontalDivider(color = Slate100, thickness = 1.dp, modifier = Modifier.padding(start = 58.dp))

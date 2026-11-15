@@ -96,6 +96,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _showPortalLoginDialog = MutableStateFlow(false)
     val showPortalLoginDialog: StateFlow<Boolean> = _showPortalLoginDialog.asStateFlow()
 
+    private val _showAboutProjectScreen = MutableStateFlow(false)
+    val showAboutProjectScreen: StateFlow<Boolean> = _showAboutProjectScreen.asStateFlow()
+
+    fun setShowAboutProjectScreen(show: Boolean) {
+        _showAboutProjectScreen.value = show
+    }
+
     private val _portalLoginStep = MutableStateFlow(PortalLoginStep.CREDENTIALS_AND_CAPTCHA)
     val portalLoginStep: StateFlow<PortalLoginStep> = _portalLoginStep.asStateFlow()
 

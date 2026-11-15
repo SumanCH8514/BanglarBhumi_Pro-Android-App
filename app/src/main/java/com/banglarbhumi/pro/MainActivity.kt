@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -64,10 +65,14 @@ fun MainAppContainer(viewModel: MainViewModel) {
     val isBengali by viewModel.isBengali.collectAsState()
     val searchResult by viewModel.searchResult.collectAsState()
     val showPortalLoginDialog by viewModel.showPortalLoginDialog.collectAsState()
+    val showAboutProjectScreen by viewModel.showAboutProjectScreen.collectAsState()
+    val isAboutScreenActive = showAboutProjectScreen && currentTab == NavigationTab.ACCOUNT
 
-    BackHandler(enabled = searchResult != null || currentTab != NavigationTab.SEARCH) {
+    BackHandler(enabled = searchResult != null || isAboutScreenActive || currentTab != NavigationTab.SEARCH) {
         if (searchResult != null) {
             viewModel.clearSearchResult()
+        } else if (isAboutScreenActive) {
+            viewModel.setShowAboutProjectScreen(false)
         } else if (currentTab != NavigationTab.SEARCH) {
             currentTab = NavigationTab.SEARCH
         }
@@ -79,8 +84,22 @@ fun MainAppContainer(viewModel: MainViewModel) {
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        if (isAboutScreenActive) {
+                            IconButton(
+                                onClick = { viewModel.setShowAboutProjectScreen(false) },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+
                         Surface(
                             shape = CircleShape,
                             color = Color.White,
@@ -99,14 +118,22 @@ fun MainAppContainer(viewModel: MainViewModel) {
                         }
                         Column(verticalArrangement = Arrangement.Center) {
                             Text(
-                                text = if (isBengali) "বাংলারভূমি প্রো" else "BanglarBhumi Pro",
+                                text = if (isAboutScreenActive) {
+                                    if (isBengali) "প্রজেক্ট সম্পর্কিত তথ্য" else "About Project"
+                                } else {
+                                    if (isBengali) "বাংলারভূমি প্রো" else "BanglarBhumi Pro"
+                                },
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 17.sp,
                                 color = Color.White,
                                 lineHeight = 19.sp
                             )
                             Text(
-                                text = "A SumanOnline Project",
+                                text = if (isAboutScreenActive) {
+                                    "BanglarBhumi PRO • SumanOnline"
+                                } else {
+                                    "A SumanOnline Project"
+                                },
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 10.5.sp,
                                 color = Color.White.copy(alpha = 0.88f),
